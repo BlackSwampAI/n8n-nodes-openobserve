@@ -38,6 +38,11 @@ function createBody(context: IExecuteFunctions, itemIndex: number): IDataObject 
 			`Only scheduled and real-time alerts are supported at item ${itemIndex}`,
 		);
 	const destinations = getParameter<unknown[]>(context, 'destinations', itemIndex, []);
+	if (destinations.length === 0) {
+		throw new OpenObserveValidationError(
+			`Select at least one alert destination at item ${itemIndex}`,
+		);
+	}
 	if (!destinations.every((value) => typeof value === 'string' && value.trim()))
 		throw new OpenObserveValidationError(
 			`Destinations must contain only non-empty names at item ${itemIndex}`,

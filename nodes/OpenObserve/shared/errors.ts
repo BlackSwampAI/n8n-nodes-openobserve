@@ -37,6 +37,31 @@ export function redactSensitive(value: unknown, secrets: string[] = []): string 
 		);
 }
 
+function extractErrorDetail(error: unknown): unknown {
+	if (!(error instanceof Error)) return error;
+	const candidate = error as Error & {
+		body?: unknown;
+		data?: unknown;
+		description?: unknown;
+		response?: { body?: unknown; data?: unknown; status?: unknown; statusCode?: unknown };
+	};
+	return {
+		message: error.message,
+		...(candidate.description === undefined ? {} : { description: candidate.description }),
+		...(candidate.body === undefined ? {} : { body: candidate.body }),
+		...(candidate.data === undefined ? {} : { data: candidate.data }),
+		...(candidate.response === undefined
+			? {}
+			: {
+					response: {
+						status: candidate.response.status ?? candidate.response.statusCode,
+						...(candidate.response.body === undefined ? {} : { body: candidate.response.body }),
+						...(candidate.response.data === undefined ? {} : { data: candidate.response.data }),
+					},
+				}),
+	};
+}
+
 function safeStringify(value: unknown, seen: WeakSet<object>): string {
 	try {
 		return JSON.stringify(value, (_key, nestedValue: unknown) => {
@@ -74,7 +99,7 @@ export function normalizeOpenObserveError(
 	options: { itemIndex?: number; secrets?: string[] } = {},
 ): NodeApiError | NodeOperationError {
 	const status = statusCodeFrom(error);
-	const safeDetail = redactSensitive(error, options.secrets);
+	const safeDetail = redactSensitive(extractErrorDetail(error), options.secrets).slice(0, 8_000);
 	if (error instanceof OpenObserveValidationError) {
 		return new NodeOperationError(node, safeDetail, {
 			itemIndex: options.itemIndex,

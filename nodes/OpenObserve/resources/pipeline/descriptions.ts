@@ -72,9 +72,10 @@ export const pipelineProperties: INodeProperties[] = [
 		displayName: 'Pipeline JSON',
 		name: 'pipelineJson',
 		type: 'json',
-		default: '{"source":{},"nodes":[],"edges":[]}',
+		required: true,
+		default: '',
 		description:
-			'Source, graph, and advanced supported fields. Real-time graphs must retain a route back to the source stream if unmatched events must be stored.',
+			'Required complete source and graph object with non-empty nodes and valid edges. Include a real-time stream input or scheduled query input and at least one output. Real-time graphs must retain a route back to the source stream if unmatched events must be stored.',
 		...show(['create']),
 	},
 	{

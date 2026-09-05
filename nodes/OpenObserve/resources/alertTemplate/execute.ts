@@ -54,6 +54,11 @@ export async function executeAlertTemplate(
 		return items(selected, itemIndex);
 	}
 	if (operation === 'create') {
+		const templateType = getParameter<string>(context, 'templateType', itemIndex, 'http');
+		const title =
+			templateType === 'email'
+				? getRequiredParameter(context, 'title', itemIndex, 'Title')
+				: getParameter(context, 'title', itemIndex, '').trim();
 		const advanced = requireJsonObject(
 			getParameter(context, 'templateJson', itemIndex, '{}'),
 			'Template JSON',
@@ -65,8 +70,8 @@ export async function executeAlertTemplate(
 			body: {
 				...advanced,
 				name: getRequiredParameter(context, 'name', itemIndex, 'Name'),
-				type: getParameter(context, 'templateType', itemIndex, 'http'),
-				title: getParameter(context, 'title', itemIndex, ''),
+				type: templateType,
+				title,
 				body: getRequiredParameter(context, 'body', itemIndex, 'Body'),
 				isPrebuilt: false,
 			},

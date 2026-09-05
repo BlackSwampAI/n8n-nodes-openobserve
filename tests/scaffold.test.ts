@@ -138,6 +138,38 @@ test('the advertised v0.1 resource and operation matrix is complete', () => {
 	expect(Object.values(expected).flat()).toHaveLength(59);
 });
 
+it('keeps minimum-configuration safety metadata on side-effecting operations', () => {
+	const properties = new OpenObserve().description.properties;
+	const find = (resource: string, name: string, operation: string) =>
+		properties.find(
+			(property) =>
+				property.name === name &&
+				property.displayOptions?.show?.resource?.includes(resource) &&
+				property.displayOptions.show.operation?.includes(operation),
+		);
+
+	expect(find('alert', 'destinations', 'create')).toMatchObject({
+		type: 'multiOptions',
+		required: true,
+	});
+	expect(find('alert', 'frequency', 'create')?.displayOptions?.show?.alertType).toEqual([
+		'scheduled',
+	]);
+	expect(find('alert', 'period', 'create')?.displayOptions?.show?.alertType).toEqual(['scheduled']);
+	for (const resource of [
+		'stream',
+		'function',
+		'dashboard',
+		'alertTemplate',
+		'alertDestination',
+		'alert',
+		'pipeline',
+	]) {
+		expect(find(resource, 'confirmDestructive', 'delete'), resource).toBeDefined();
+	}
+	expect(find('alert', 'confirmTrigger', 'trigger')).toBeDefined();
+});
+
 it('keeps representative editor selections focused and hides unrelated dynamic locators', () => {
 	const properties = new OpenObserve().description.properties;
 	for (const property of properties) {

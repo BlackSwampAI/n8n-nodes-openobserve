@@ -1,9 +1,9 @@
-# OpenObserve compact logo provenance
+# OpenObserve product glyph provenance
 
-The node icon is the unmodified official `mini_logo.svg` from the OpenObserve-controlled `openobserve/openobserve` repository at immutable commit `8d72af70a6595047804daa484e8dae4b34cdf2b9`, accessed 2026-09-05:
+The node icon is the unmodified official `o2_logo.svg` from the OpenObserve-controlled `openobserve/openobserve` repository at immutable commit `c651f43f29c864478f5107612622a5e20492ea39`, accessed 2026-09-05:
 
-`https://raw.githubusercontent.com/openobserve/openobserve/8d72af70a6595047804daa484e8dae4b34cdf2b9/web/src/assets/images/common/mini_logo.svg`
+`https://raw.githubusercontent.com/openobserve/openobserve/c651f43f29c864478f5107612622a5e20492ea39/web/src/assets/images/common/o2_logo.svg`
 
-SHA-256: `2ffba497e2be7c99358a0d46ce6886cae024b0812154e9552eec3d409c26831a`.
+SHA-256: `888491dc3e61cb0b2dd069d844c92ea0098197884176e2abb9db3570d764022f`.
 
-The compact official asset was selected instead of the horizontal wordmark so it remains legible in n8n's square node-icon presentation. The same byte-for-byte SVG is used for light and dark icon references. It is included only to identify compatibility. See the README for the unaffiliated-project notice.
+This current product glyph matches the official app favicon's circular observability mark and is more recognizable at node-icon size than the older `mini_logo.svg` lightning-bolt asset. The same byte-for-byte SVG is used for light and dark icon references. It is included only to identify compatibility. See the README for the unaffiliated-project notice.

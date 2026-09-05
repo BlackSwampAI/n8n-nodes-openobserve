@@ -135,15 +135,17 @@ export async function executeSearch(
 		throw new OpenObserveValidationError(
 			`Unsupported Search operation "${operation}" at item ${itemIndex}`,
 		);
+	const aroundRecord = requireJsonObject(
+		context.getNodeParameter('aroundRecordJson', itemIndex, ''),
+		'Around Record JSON',
+		itemIndex,
+	);
+	requirePositiveSafeInteger(aroundRecord._timestamp, 'Around Record JSON _timestamp', itemIndex);
 	const response = await openObserveApiRequest.call(context, {
 		method: 'POST',
 		pathSegments: [stream, '_around'],
 		query: { size: limit, ...(timeout ? { timeout } : {}) },
-		body: requireJsonObject(
-			context.getNodeParameter('aroundRecordJson', itemIndex, '{}'),
-			'Around Record JSON',
-			itemIndex,
-		),
+		body: aroundRecord,
 		itemIndex,
 	});
 	return toItems([response], itemIndex);

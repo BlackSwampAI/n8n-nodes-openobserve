@@ -163,6 +163,20 @@ describe('Search', () => {
 				0,
 			),
 		).rejects.toThrow(/JSON object/);
+		await expect(
+			executeSearch(
+				context({ streamName: 'x', aroundRecordJson: '{}', limit: 1 }),
+				'searchAround',
+				3,
+			),
+		).rejects.toThrow(/_timestamp.*item 3/);
+		await expect(
+			executeSearch(
+				context({ streamName: 'x', aroundRecordJson: '{"_timestamp":""}', limit: 1 }),
+				'searchAround',
+				4,
+			),
+		).rejects.toThrow(/positive safe integer.*item 4/);
 		await expect(executeSearch(context({ limit: 0 }), 'query', 0)).rejects.toThrow(/Limit/);
 		await expect(
 			executeSearch(context({ limit: 1, timeout: -1 }), 'searchAround', 0),
