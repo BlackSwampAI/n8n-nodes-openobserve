@@ -33,6 +33,7 @@ import { executeAlert } from './resources/alert/execute';
 import { pipelineProperties } from './resources/pipeline/descriptions';
 import { executePipeline } from './resources/pipeline/execute';
 import { normalizeOpenObserveError } from './shared/errors';
+import { normalizeLocatorValue } from './shared/locator';
 import { openObserveApiRequest } from './shared/transport';
 
 function safeFailure(error: unknown, itemIndex?: number | number[]): INodeExecutionData {
@@ -215,11 +216,12 @@ export class OpenObserve implements INodeType {
 				this: ILoadOptionsFunctions,
 				filter?: string,
 			): Promise<INodeListSearchResult> {
-				const selectedFolder = this.getNodeParameter('alertFolder', 'default');
-				const folder =
-					typeof selectedFolder === 'object' && selectedFolder !== null && 'value' in selectedFolder
-						? String(selectedFolder.value || 'default')
-						: String(selectedFolder || 'default');
+				const folder = normalizeLocatorValue(
+					this.getNodeParameter('alertFolder', 'default'),
+					'Alert folder',
+					0,
+					{ fallback: 'default' },
+				);
 				const response = (await openObserveApiRequest.call(this, {
 					apiPathMode: 'v2',
 					pathSegments: ['alerts'],
@@ -257,11 +259,12 @@ export class OpenObserve implements INodeType {
 				this: ILoadOptionsFunctions,
 				filter?: string,
 			): Promise<INodeListSearchResult> {
-				const selectedFolder = this.getNodeParameter('folderId', 'default');
-				const folder =
-					typeof selectedFolder === 'object' && selectedFolder !== null && 'value' in selectedFolder
-						? String(selectedFolder.value || 'default')
-						: String(selectedFolder || 'default');
+				const folder = normalizeLocatorValue(
+					this.getNodeParameter('folderId', 'default'),
+					'Dashboard folder',
+					0,
+					{ fallback: 'default' },
+				);
 				const response = (await openObserveApiRequest.call(this, {
 					pathSegments: ['dashboards'],
 					query: { folder, ...(filter ? { title: filter, pageSize: 100 } : {}) },

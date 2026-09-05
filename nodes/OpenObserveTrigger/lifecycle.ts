@@ -31,13 +31,6 @@ const delay = async (milliseconds: number): Promise<void> =>
 	// eslint-disable-next-line @n8n/community-nodes/no-restricted-globals
 	await new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-export const locatorValue = (value: unknown, fallback = ''): string =>
-	String(
-		value && typeof value === 'object' && 'value' in value
-			? ((value as { value?: unknown }).value ?? fallback)
-			: (value ?? fallback),
-	).trim();
-
 export function ownershipNames(workflowId: string, nodeId: string) {
 	const digest = createHash('sha256').update(`${workflowId}:${nodeId}`).digest('hex').slice(0, 24);
 	return {

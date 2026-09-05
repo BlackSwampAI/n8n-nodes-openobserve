@@ -1,5 +1,6 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { requireJsonObject } from '../../shared/json';
+import { normalizeLocatorValue } from '../../shared/locator';
 import { requirePositiveSafeInteger } from '../../shared/numbers';
 import { collectPaginated } from '../../shared/pagination';
 import { toOpenObserveMicroseconds } from '../../shared/time';
@@ -12,16 +13,8 @@ const getParameter = <T>(
 	itemIndex: number,
 	fallback: T,
 ) => context.getNodeParameter(name, itemIndex, fallback) as T;
-const locator = (value: unknown) =>
-	String(
-		value && typeof value === 'object' && 'value' in value
-			? ((value as { value?: unknown }).value ?? '')
-			: (value ?? ''),
-	).trim();
 const required = (context: IExecuteFunctions, name: string, itemIndex: number, label: string) => {
-	const value = locator(getParameter(context, name, itemIndex, ''));
-	if (!value) throw new OpenObserveValidationError(`${label} is required at item ${itemIndex}`);
-	return value;
+	return normalizeLocatorValue(getParameter(context, name, itemIndex, ''), label, itemIndex);
 };
 const items = (values: unknown[], itemIndex: number): INodeExecutionData[] =>
 	values.map((value) => ({
@@ -191,6 +184,12 @@ export async function executePipeline(
 		return items(returnAll ? userPipelines : userPipelines.slice(0, limit), itemIndex);
 	}
 	if (operation === 'getHistory') {
+		const historyPipelineId = normalizeLocatorValue(
+			getParameter(context, 'historyPipelineId', itemIndex, ''),
+			'Pipeline',
+			itemIndex,
+			{ required: false },
+		);
 		const returnAll = getParameter(context, 'returnAll', itemIndex, false);
 		const limit = returnAll
 			? undefined
@@ -218,9 +217,7 @@ export async function executePipeline(
 				const response = (await openObserveApiRequest.call(context, {
 					pathSegments: ['pipelines', 'history'],
 					query: {
-						...(locator(getParameter(context, 'historyPipelineId', itemIndex, ''))
-							? { pipeline_id: locator(getParameter(context, 'historyPipelineId', itemIndex, '')) }
-							: {}),
+						...(historyPipelineId ? { pipeline_id: historyPipelineId } : {}),
 						...(start === undefined ? {} : { start_time: start }),
 						...(end === undefined ? {} : { end_time: end }),
 						from: offset,

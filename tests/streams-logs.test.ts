@@ -58,6 +58,9 @@ describe('Stream and Log node metadata', () => {
 		expect(operationProperties[1].displayOptions?.show?.resource).toEqual(['log']);
 		expect(operationProperties[0].options).toHaveLength(5);
 		expect(operationProperties[1].options).toHaveLength(2);
+		const settings = properties.find((property) => property.name === 'settingsJson');
+		expect(settings?.required).toBe(true);
+		expect(settings?.description).toContain('at least one setting');
 	});
 
 	it.each([
@@ -74,6 +77,66 @@ describe('Stream and Log node metadata', () => {
 
 describe('Stream requests', () => {
 	beforeEach(() => requestMock.mockReset());
+
+	it('gets schema from a list-mode locator and omits an empty keyword', async () => {
+		requestMock.mockResolvedValue({ fields: [] });
+		await executeStreamItem(
+			executeContext({
+				streamType: 'logs',
+				streamName: { mode: 'list', value: 'n8n' },
+				keyword: '',
+			}),
+			'getSchema',
+			0,
+		);
+		expect(requestMock).toHaveBeenCalledWith({
+			pathSegments: ['streams', 'n8n', 'schema'],
+			query: { type: 'logs' },
+			itemIndex: 0,
+		});
+	});
+
+	it('rejects a malformed stream locator before transport', async () => {
+		await expect(
+			executeStreamItem(
+				executeContext({ streamType: 'logs', streamName: { mode: 'list' }, keyword: '' }),
+				'getSchema',
+				5,
+			),
+		).rejects.toThrow(/Stream name must be selected from the list or provided as text at item 5/);
+		expect(requestMock).not.toHaveBeenCalled();
+	});
+
+	it('updates settings from a list-mode locator and rejects an empty object first', async () => {
+		requestMock.mockResolvedValue({ code: 200 });
+		await executeStreamItem(
+			executeContext({
+				streamType: 'logs',
+				streamName: { mode: 'list', value: 'n8n' },
+				settingsJson: '{"data_retention":1}',
+			}),
+			'updateSettings',
+			0,
+		);
+		expect(requestMock.mock.calls[0][0]).toMatchObject({
+			method: 'PUT',
+			pathSegments: ['streams', 'n8n', 'settings'],
+			body: { data_retention: 1 },
+		});
+		requestMock.mockClear();
+		await expect(
+			executeStreamItem(
+				executeContext({
+					streamType: 'logs',
+					streamName: { mode: 'list', value: 'n8n' },
+					settingsJson: '{}',
+				}),
+				'updateSettings',
+				0,
+			),
+		).rejects.toThrow(/must not be empty/);
+		expect(requestMock).not.toHaveBeenCalled();
+	});
 
 	it('rejects the deferred Create operation without transport', async () => {
 		await expect(

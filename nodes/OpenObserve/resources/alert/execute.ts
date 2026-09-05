@@ -1,5 +1,6 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { requireJsonObject } from '../../shared/json';
+import { normalizeLocatorValue } from '../../shared/locator';
 import { requireNonNegativeSafeInteger, requirePositiveSafeInteger } from '../../shared/numbers';
 import { collectPaginated } from '../../shared/pagination';
 import { toOpenObserveMicroseconds } from '../../shared/time';
@@ -16,16 +17,7 @@ const getRequiredParameter = (
 	name: string,
 	itemIndex: number,
 	label: string,
-) => {
-	const rawValue = getParameter<unknown>(context, name, itemIndex, '');
-	const value = String(
-		rawValue && typeof rawValue === 'object' && 'value' in rawValue
-			? ((rawValue as { value?: unknown }).value ?? '')
-			: rawValue,
-	).trim();
-	if (!value) throw new OpenObserveValidationError(`${label} is required at item ${itemIndex}`);
-	return value;
-};
+) => normalizeLocatorValue(getParameter(context, name, itemIndex, ''), label, itemIndex);
 const one = (value: unknown, itemIndex: number): INodeExecutionData[] => [
 	{
 		json: (value && typeof value === 'object' ? value : { value }) as IDataObject,
@@ -242,12 +234,12 @@ export async function executeAlert(
 		);
 	if (operation === 'clone') {
 		const cloneName = getParameter(context, 'cloneName', itemIndex, '').trim();
-		const rawCloneFolder = getParameter<unknown>(context, 'cloneFolder', itemIndex, '');
-		const cloneFolder = String(
-			rawCloneFolder && typeof rawCloneFolder === 'object' && 'value' in rawCloneFolder
-				? ((rawCloneFolder as { value?: unknown }).value ?? '')
-				: rawCloneFolder,
-		).trim();
+		const cloneFolder = normalizeLocatorValue(
+			getParameter(context, 'cloneFolder', itemIndex, ''),
+			'Clone folder',
+			itemIndex,
+			{ required: false },
+		);
 		return one(
 			await openObserveApiRequest.call(context, {
 				...v2,
