@@ -1,63 +1,15 @@
-# Releasing an n8n community node
+# Releasing
 
-This repository publishes only from `.github/workflows/publish.yml`. Never run `npm publish` locally for a version intended for n8n verification.
-
-## Before development
-
-1. Create the final public GitHub repository from this template.
-2. Choose the final npm name beginning with `n8n-nodes-` and confirm it is available.
-3. Replace all `<...>` placeholders in `package.json`, the README, metadata, and source files.
-4. Keep `.github/workflows/publish.yml` on the default `main` branch from the beginning.
-5. Do not create a version tag yet.
+This package is not release-ready in Batch 0. Never publish locally. An authorized release must come from `.github/workflows/publish.yml` on the public `BlackSwampAI/n8n-nodes-openobserve` repository and must follow current n8n verification and npm provenance guidance.
 
 ## Release gate
 
-Run:
+Run `npm ci`, format check, lint, typecheck, unit/contract/E2E tests appropriate to the implemented scope, build, `npm run package:check`, a disposable packed-package n8n install, and `git diff --check`. Confirm the README lists real operations and compatibility rather than planned scope.
 
-```sh
-npm ci
-npm run lint
-npm run build
-npm run release:check
-npm pack --dry-run
-git diff --check
-```
+## First publication only
 
-Also install the packed tarball in a disposable n8n instance and verify credentials, operations, outputs, errors, and any trigger behavior. Replace the starter README with `README_TEMPLATE.md` and document installation, compatibility, credentials, operations, resources, and license.
+npm requires a package to exist before its Trusted Publisher can be attached. For an explicitly authorized first `0.1.0` publication, create a temporary narrowly scoped granular token, store it only as the GitHub Actions secret `NPM_TOKEN`, and let the tag workflow publish with GitHub provenance. Do not configure or store any token during development.
 
-## First publication as 0.1.0
+After npm contains the package, configure its GitHub Actions Trusted Publisher for owner `BlackSwampAI`, repository `n8n-nodes-openobserve`, workflow `publish.yml`, with no environment unless the workflow and npm configuration both declare the same one. Delete the GitHub secret and revoke the temporary token immediately. Verify the exact npm version, `latest` dist-tag, SLSA provenance, immutable Git tag, successful workflow, and matching GitHub release.
 
-npm requires a package to exist before it can have a Trusted Publisher. Bootstrap the first version without sacrificing provenance:
-
-1. Create a temporary granular npm access token with publish access only to the new package and the required 2FA bypass for CI.
-2. Add it to the GitHub repository as an Actions secret named `NPM_TOKEN`.
-3. Confirm `package.json` is `0.1.0`, CI is green, and `npm run release:check` passes.
-4. Create and push an annotated `v0.1.0` tag on the validated release commit.
-5. Watch the Publish workflow through the final release step.
-6. Verify `npm view <package>@0.1.0 dist.attestations --json` contains SLSA provenance.
-7. Create the matching GitHub release.
-
-The temporary token authenticates the first GitHub Actions run; GitHub still supplies the provenance identity.
-
-## Switch to OIDC immediately
-
-After the package exists, add an npm Trusted Publisher:
-
-- Provider: GitHub Actions
-- Repository owner: the exact GitHub owner
-- Repository name: the exact repository name
-- Workflow filename: `publish.yml`
-- Environment: blank unless the workflow declares a matching GitHub Environment
-- Allowed action: npm publish
-
-Delete the `NPM_TOKEN` GitHub secret and revoke the temporary npm token. The existing workflow will then use OIDC automatically.
-
-## Later releases
-
-1. Update the package version and changelog.
-2. Run the complete release gate.
-3. Commit and push the release state to `main`.
-4. Create and push the matching annotated `v<version>` tag.
-5. Verify GitHub Actions, npm `latest`, the attestation, and the GitHub release.
-
-npm versions and published tags are immutable. Never reuse a version, move a published tag, or delete and recreate release history to hide a correction.
+npm versions and published tags are immutable. Never reuse or move them.

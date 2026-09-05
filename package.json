@@ -1,27 +1,38 @@
 {
-	"name": "n8n-nodes-community-template",
+	"name": "@blackswampai/n8n-nodes-openobserve",
 	"version": "0.1.0",
-	"description": "Reusable starter package for verified n8n community nodes",
+	"description": "Independent n8n community integration for OpenObserve",
 	"license": "MIT",
-	"homepage": "https://github.com/christopherjnelson/n8n-community-node-template#readme",
+	"homepage": "https://github.com/BlackSwampAI/n8n-nodes-openobserve#readme",
 	"keywords": [
-		"n8n-community-node-package"
+		"n8n-community-node-package",
+		"n8n",
+		"openobserve",
+		"observability",
+		"logs",
+		"metrics",
+		"traces"
 	],
 	"author": {
-		"name": "Christopher J. Nelson",
+		"name": "Black Swamp AI",
 		"email": "christopherjnelson@proton.me"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/christopherjnelson/n8n-community-node-template.git"
+		"url": "https://github.com/BlackSwampAI/n8n-nodes-openobserve.git"
 	},
 	"scripts": {
 		"build": "n8n-node build",
 		"build:watch": "tsc --watch",
 		"dev": "n8n-node dev",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
 		"lint": "n8n-node lint",
 		"lint:fix": "n8n-node lint --fix",
+		"typecheck": "tsc --noEmit",
+		"test": "node --test tests/**/*.test.mjs",
 		"release:check": "node scripts/release-check.mjs",
+		"package:check": "npm run release:check && npm pack --dry-run --cache /tmp/n8n-nodes-openobserve-npm-cache",
 		"release": "n8n-node release",
 		"prepublishOnly": "n8n-node prerelease"
 	},
@@ -31,13 +42,8 @@
 	"n8n": {
 		"n8nNodesApiVersion": 1,
 		"strict": true,
-		"credentials": [
-			"dist/credentials/GithubIssuesApi.credentials.js",
-			"dist/credentials/GithubIssuesOAuth2Api.credentials.js"
-		],
 		"nodes": [
-			"dist/nodes/GithubIssues/GithubIssues.node.js",
-			"dist/nodes/Example/Example.node.js"
+			"dist/nodes/OpenObserve/OpenObserve.node.js"
 		]
 	},
 	"devDependencies": {
