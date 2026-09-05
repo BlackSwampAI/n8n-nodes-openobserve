@@ -11,12 +11,15 @@ export class OpenObserve implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'OpenObserve',
 		name: 'openObserve',
+		icon: { light: 'file:openobserve.svg', dark: 'file:openobserve.dark.svg' },
 		group: ['transform'],
 		version: 1,
 		description: 'Connect workflows to OpenObserve',
+		subtitle: 'OpenObserve API development scaffold',
 		defaults: { name: 'OpenObserve' },
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
+		usableAsTool: true,
 		properties: [
 			{
 				displayName: 'This development scaffold does not contain OpenObserve operations yet',

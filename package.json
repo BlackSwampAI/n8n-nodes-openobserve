@@ -14,7 +14,8 @@
 		"traces"
 	],
 	"author": {
-		"name": "Black Swamp AI"
+		"name": "Black Swamp AI",
+		"email": "christopherjnelson@proton.me"
 	},
 	"repository": {
 		"type": "git",
@@ -42,7 +43,7 @@
 		"n8nNodesApiVersion": 1,
 		"strict": true,
 		"nodes": [
-			"dist/OpenObserve.node.js"
+			"dist/nodes/OpenObserve/OpenObserve.node.js"
 		]
 	},
 	"devDependencies": {
