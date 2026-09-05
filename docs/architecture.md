@@ -57,6 +57,7 @@ This repository is an independent MIT-licensed API integration and is not affili
 - Batch 2: six Stream operations and ordinary JSON Log Ingest/Ingest Many, including pinned OSS coverage.
 - Batch 3: SQL Search, ordinary JSON metrics plus Prometheus-compatible reads, and OSS-safe Trace Latest/DAG reads. Enterprise-only Service Graph is deferred.
 - Batch 4: Function lifecycle/VRL validation and version-preserving Dashboard lifecycle. Panel CRUD remains deferred.
+- Batch 5: reusable Alert Templates and webhook Destinations plus current-v2 scheduled/real-time Alert lifecycle and mixed-version history. Destination response headers are always redacted.
 - Later action batches: implement only matrix operations with focused unit + OSS/Cloud contract tests.
 - Trigger batch: only after the documented feasibility and safety gate.
 - Release batch: UX audit, compatibility declaration, package install test, first-publication bootstrap, provenance verification.

@@ -442,6 +442,44 @@ test('transport normalizes errors with item context and makes no retry attempt',
 	assert.equal(attempts, 1);
 });
 
+test('transport redacts caller-supplied destination header values from API errors', async () => {
+	const customHeaderSecret = 'custom-webhook-secret-value';
+	const context = {
+		getCredentials: async () => ({
+			baseUrl: 'https://example.test',
+			organizationId: 'default',
+			accountIdentifier: 'service@example.test',
+			secret: 'credential-secret',
+		}),
+		getNode: () => fakeNode,
+		helpers: {
+			httpRequestWithAuthentication: async () => {
+				throw { statusCode: 400, message: `Invalid header ${customHeaderSecret}` };
+			},
+		},
+	};
+
+	await assert.rejects(
+		openObserveApiRequest.call(context as never, {
+			method: 'POST',
+			pathSegments: ['alerts', 'destinations'],
+			sensitiveValues: [customHeaderSecret],
+			itemIndex: 7,
+		}),
+		(error: unknown) => {
+			const caught = error as {
+				message: string;
+				description: string;
+				context: { itemIndex: number };
+			};
+			assert.equal(`${caught.message} ${caught.description}`.includes(customHeaderSecret), false);
+			assert.match(`${caught.message} ${caught.description}`, /REDACTED/);
+			assert.equal(caught.context.itemIndex, 7);
+			return true;
+		},
+	);
+});
+
 test('transport preserves actionable local validation errors with item context', async () => {
 	let attempts = 0;
 	const cases = [

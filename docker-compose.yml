@@ -6,6 +6,8 @@ services:
       ZO_ROOT_USER_EMAIL: root@example.test
       ZO_ROOT_USER_PASSWORD: OpenObserve-Local-Test-Only-9x!
       ZO_TELEMETRY: 'false'
+      # Test-only: permits the exact local alert receiver on the disposable Docker bridge.
+      ZO_SKIP_SSRF_CHECKS: 'true'
     ports:
       - '127.0.0.1:5080:5080'
     volumes:
