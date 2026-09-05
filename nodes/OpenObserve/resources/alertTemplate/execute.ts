@@ -1,5 +1,6 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { requireJsonObject } from '../../shared/json';
+import { normalizeLocatorValue } from '../../shared/locator';
 import { requirePositiveSafeInteger } from '../../shared/numbers';
 import { openObserveApiRequest } from '../../shared/transport';
 import { OpenObserveValidationError } from '../../shared/validation-error';
@@ -15,11 +16,7 @@ const getRequiredParameter = (
 	name: string,
 	itemIndex: number,
 	label: string,
-) => {
-	const value = String(getParameter(context, name, itemIndex, '')).trim();
-	if (!value) throw new OpenObserveValidationError(`${label} is required at item ${itemIndex}`);
-	return value;
-};
+) => normalizeLocatorValue(getParameter(context, name, itemIndex, ''), label, itemIndex);
 const items = (values: unknown[], itemIndex: number): INodeExecutionData[] =>
 	values.map((value) => ({ json: value as IDataObject, pairedItem: { item: itemIndex } }));
 const one = (value: unknown, itemIndex: number): INodeExecutionData[] => [

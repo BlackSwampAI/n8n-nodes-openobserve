@@ -4,6 +4,7 @@
 
 - Harden the 0.1.0 release candidate documentation, least-privilege CI/publish gates, package/runtime validation, and first-publication checklist.
 - Reduce the v0.1 editor surface to 59 focused operations by deferring explicit Stream Create and Metric Ingest/Ingest Many; collectors remain the preferred continuous-metric transport.
+- Correct list-mode resource locator handling across the action and trigger nodes, and clarify that Stream Update Settings requires at least one setting.
 - Add real-time and scheduled Pipeline lifecycle, validated graph JSON, enable/disable, and paginated history operations.
 - Add the selected-alert OpenObserve Trigger with ownership-safe template/destination lifecycle and constant-time webhook authentication.
 

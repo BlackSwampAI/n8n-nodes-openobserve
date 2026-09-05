@@ -89,8 +89,10 @@ export const streamProperties: INodeProperties[] = [
 		displayName: 'Settings JSON',
 		name: 'settingsJson',
 		type: 'json',
+		required: true,
 		default: '{}',
-		description: 'OpenObserve stream settings object; only supplied keys are changed',
+		description:
+			'OpenObserve stream settings object; it must contain at least one setting, and only supplied keys are changed',
 		displayOptions: { show: { resource: ['stream'], operation: ['updateSettings'] } },
 	},
 	{

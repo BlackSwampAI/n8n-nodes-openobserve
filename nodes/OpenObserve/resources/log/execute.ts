@@ -1,6 +1,7 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 
 import { requireJsonObject, type JsonRecord } from '../../shared/json';
+import { normalizeLocatorValue } from '../../shared/locator';
 import { openObserveApiRequest } from '../../shared/transport';
 import { OpenObserveValidationError } from '../../shared/validation-error';
 
@@ -16,10 +17,11 @@ interface IngestResponse extends IDataObject {
 }
 
 function requireStreamName(context: IExecuteFunctions, itemIndex: number): string {
-	const value = context.getNodeParameter('streamName', itemIndex, '') as string;
-	if (!value.trim())
-		throw new OpenObserveValidationError(`Stream name is required at item ${itemIndex}`);
-	return value.trim();
+	return normalizeLocatorValue(
+		context.getNodeParameter('streamName', itemIndex, ''),
+		'Stream name',
+		itemIndex,
+	);
 }
 
 function ingestionResult(

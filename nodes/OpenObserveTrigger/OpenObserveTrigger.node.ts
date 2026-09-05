@@ -9,10 +9,10 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import { openObserveApiRequest } from '../OpenObserve/shared/transport';
+import { normalizeLocatorValue } from '../OpenObserve/shared/locator';
 import {
 	activateTrigger,
 	deactivateTrigger,
-	locatorValue,
 	type TriggerState,
 	validateWebhookSecret,
 } from './lifecycle';
@@ -108,7 +108,12 @@ export class OpenObserveTrigger implements INodeType {
 		},
 		loadOptions: {
 			async getAlerts(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const folder = locatorValue(this.getNodeParameter('alertFolder', 'default'), 'default');
+				const folder = normalizeLocatorValue(
+					this.getNodeParameter('alertFolder', 'default'),
+					'Alert folder',
+					0,
+					{ fallback: 'default' },
+				);
 				const response = (await openObserveApiRequest.call(this, {
 					apiPathMode: 'v2',
 					pathSegments: ['alerts'],
@@ -138,7 +143,12 @@ export class OpenObserveTrigger implements INodeType {
 				if (!webhookUrl) return false;
 				await activateTrigger(this, state, {
 					webhookUrl,
-					folderId: locatorValue(this.getNodeParameter('alertFolder', 'default'), 'default'),
+					folderId: normalizeLocatorValue(
+						this.getNodeParameter('alertFolder', 'default'),
+						'Alert folder',
+						0,
+						{ fallback: 'default' },
+					),
 					alertIds: this.getNodeParameter('alertIds', []) as string[],
 				});
 				return true;
@@ -150,7 +160,12 @@ export class OpenObserveTrigger implements INodeType {
 				const alertIds = this.getNodeParameter('alertIds', []) as string[];
 				await activateTrigger(this, staticState(this), {
 					webhookUrl,
-					folderId: locatorValue(this.getNodeParameter('alertFolder', 'default'), 'default'),
+					folderId: normalizeLocatorValue(
+						this.getNodeParameter('alertFolder', 'default'),
+						'Alert folder',
+						0,
+						{ fallback: 'default' },
+					),
 					alertIds,
 				});
 				return true;

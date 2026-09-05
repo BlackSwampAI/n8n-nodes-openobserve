@@ -1,5 +1,6 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { requireNonNegativeSafeInteger, requirePositiveSafeInteger } from '../../shared/numbers';
+import { normalizeLocatorValue } from '../../shared/locator';
 import { collectPaginated } from '../../shared/pagination';
 import { toOpenObserveMicroseconds } from '../../shared/time';
 import { openObserveApiRequest } from '../../shared/transport';
@@ -15,11 +16,7 @@ const getRequiredParameter = (
 	name: string,
 	itemIndex: number,
 	label: string,
-) => {
-	const value = String(context.getNodeParameter(name, itemIndex, '')).trim();
-	if (!value) throw new OpenObserveValidationError(`${label} is required at item ${itemIndex}`);
-	return value;
-};
+) => normalizeLocatorValue(context.getNodeParameter(name, itemIndex, ''), label, itemIndex);
 const getTimeRange = (context: IExecuteFunctions, itemIndex: number) => {
 	const start = toOpenObserveMicroseconds(
 		getRequiredParameter(context, 'startTime', itemIndex, 'Start'),
