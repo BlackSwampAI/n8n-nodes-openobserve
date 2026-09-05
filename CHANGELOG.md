@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Harden the 0.1.0 release candidate documentation, least-privilege CI/publish gates, package/runtime validation, and first-publication checklist.
 - Add real-time and scheduled Pipeline lifecycle, validated graph JSON, enable/disable, and paginated history operations.
 - Add the selected-alert OpenObserve Trigger with ownership-safe template/destination lifecycle and constant-time webhook authentication.
 

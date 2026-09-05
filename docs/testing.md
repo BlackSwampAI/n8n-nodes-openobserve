@@ -8,7 +8,7 @@
 - organization: `default`
 - email: `root@example.test`
 - password: `OpenObserve-Local-Test-Only-9x!`
-- future streams: `n8n_e2e_logs`, `n8n_e2e_metrics`, `n8n_e2e_traces`
+- fixture resources: exact run-scoped names documented by each guarded live suite
 
 These values are fixtures, not production secrets. The port binds to loopback. The named volume persists for debugging; `docker compose down -v` explicitly makes a run disposable.
 
@@ -27,8 +27,11 @@ These values are fixtures, not production secrets. The port binds to loopback. T
 - `tests/openobserve-trigger.live.test.ts`: opt-in pinned-OSS proof of selected-alert attachment, repeated activation, real secret-authenticated delivery through the trigger webhook method, exact detachment, preservation of the alert's unrelated destination/configuration, and dependency-ordered cleanup. It uses the same loopback/default/private-bridge guards as the Batch 5 receiver fixture.
 - `tests/pipelines.test.ts`: operation visibility, selector routing, real-time/scheduled graph validation, evaluation/remote exclusions, exact update preservation, enable/disable/delete routing, and 1,000-row history pagination boundaries.
 - `tests/pipelines.live.test.ts`: guarded loopback/default exact-owned proof that a real-time stream graph processes an ingested record, plus real-time and scheduled get/list/update/enable/disable/delete and history behavior. Scheduled creation requires the queried source stream schema to exist. Cleanup uses node Delete first, exact raw fallback only on failure, deletes exact streams with `delete_all=false`, and confirms pipeline absence.
+- `tests/search-metrics-traces.live.test.ts`: guarded loopback-only Search/Metric flow, including JSON rows plus CSV and Markdown query output, and honest empty/missing Trace behavior. It creates three exact run-scoped streams, deletes each with `delete_all=false`, and confirms absence in `finally`; it never seeds traces through an out-of-scope ingestion route.
 
-The built trigger must receive an actual n8n editor/activation smoke before release: confirm credential, event, folder, and alert controls; activate twice; send rejected and accepted webhook requests; restart n8n; and deactivate. Batch 6's repository environment contains `@n8n/node-cli` but no installed `n8n` runtime, so that UI/runtime smoke cannot be claimed without a separately approved pinned n8n harness. Build and package registration tests remain the local boundary proof.
+All automated tests are TypeScript `*.test.ts` files run by Vitest. Direct-execution `.mjs` files are reserved for operational and release tooling rather than test suites.
+
+The built trigger must receive an actual n8n editor/activation smoke before release: confirm credential, event, folder, and alert controls; activate twice; send rejected and accepted webhook requests; restart n8n; and deactivate. The repository's development dependencies do not pin an n8n runtime, and the disposable packed-package metadata smoke below does not replace this final human UI check. Build, package registration tests, and authenticated runtime metadata remain the automated local boundary proof.
 
 After starting Compose, read its current bridge gateway and pass that exact value to the Batch 5 fixture:
 
@@ -37,13 +40,6 @@ OPENOBSERVE_LIVE_RECEIVER_HOST="$(docker network inspect n8n-nodes-openobserve_d
 OPENOBSERVE_LIVE=1 OPENOBSERVE_LIVE_RECEIVER_HOST="$OPENOBSERVE_LIVE_RECEIVER_HOST" npm test -- --run tests/alert-infrastructure.live.test.ts
 OPENOBSERVE_LIVE=1 OPENOBSERVE_LIVE_RECEIVER_HOST="$OPENOBSERVE_LIVE_RECEIVER_HOST" npm test -- --run tests/openobserve-trigger.live.test.ts
 ```
-
-- `tests/search-metrics-traces.live.test.ts`: guarded loopback-only Search/Metric flow, including JSON rows plus CSV and Markdown query output, and honest empty/missing Trace behavior. It creates three exact run-scoped streams, deletes each with `delete_all=false`, and confirms absence in `finally`; it never seeds traces through an out-of-scope ingestion route.
-- `tests/contract/oss/`: one suite against the pinned container, independently runnable.
-- `tests/contract/cloud/`: the same safe reads plus isolated writes against a designated non-production Cloud org; credentials come only from CI secrets.
-- `tests/e2e/`: n8n workflow execution and trigger lifecycle, added with the corresponding features.
-
-All automated tests are TypeScript `*.test.ts` files run by Vitest. Direct-execution `.mjs` files are reserved for operational and release tooling rather than test suites.
 
 Fixtures use unique, deterministic prefixes plus a run ID. Tests create only owned resources and clean them in reverse dependency order. Golden payloads must be small, hand-authored, scrubbed, and tied to the pinned version; never copy the full generated API client/spec.
 
@@ -64,13 +60,21 @@ The container healthcheck uses the distroless image's native `/openobserve node 
 
 The final pre-npm smoke target is the non-disposable deployment at `https://observe.blackswampai.com` and its existing `n8n` stream. Do not store its credentials. With a runtime-supplied least-privilege account, that smoke may ingest one uniquely tagged synthetic record and verify it through Stream/Search reads. It must never update settings, delete fields, or delete the `n8n` stream. All destructive lifecycle testing remains confined to the local Docker fixture.
 
+## Release-candidate validation record
+
+The 0.1.0 candidate is validated against OpenObserve OSS v0.92.2 at the immutable image digest above. The independent live suites cover Stream/Log lifecycle and ingestion; SQL Search and formatted output; ordinary JSON Metric ingestion and all advertised Prometheus reads; honest empty/missing Trace reads; Function/VRL and Dashboard lifecycle; Alert Template/Destination/Alert lifecycle plus real webhook delivery; Trigger activation/reconciliation/delivery/deactivation; and real-time/scheduled Pipeline lifecycle including real stream forwarding. Trace data is not seeded through an out-of-scope ingestion API. Alert and Pipeline history are exercised at their strongest pinned behavior: Alert History returns the documented pinned blank-404 discrepancy, while Pipeline History returns a valid empty wrapper. Cloud runtime behavior is not claimed.
+
+The official `@n8n/scan-community-package` 0.34.0 scanner accepts only a published npm package, verifies npm provenance, and retrieves the attested public source. The unpublished package/private repository therefore cannot receive a meaningful pre-publication scanner result. Run the pinned command in `RELEASING.md` immediately after first publication and before Creator Portal submission.
+
+On 2026-09-05, the actual packed tarball installed into a disposable `/tmp` custom-node directory beside n8n 2.37.10. The runtime started on loopback, and its authenticated type metadata contained the OpenObserve action, OpenObserve Trigger, OpenObserve API credential, and the full resource/operation controls. No user n8n home or hosted credentials were used. Browser interaction, live locator refresh, workflow activation, and harmless action execution remain final human smoke items; repository unit/live suites cover those contracts without claiming visual inspection.
+
 ## Core E2E scenario
 
-When implementation exists: authenticate; ingest two timestamped JSON log records through the ordinary JSON-array endpoint; confirm inferred stream/schema; query with SQL/date/offset/limit; retrieve field values and search around; ingest ordinary JSON metric records and query them with PromQL; create a VRL function and validate it; create reusable alert template/destination and a disabled scheduled alert; create a real-time pipeline; read each resource; update safe fields; exercise enable/disable; then delete only owned resources. Trace reads run as a separate fixture. Trigger E2E proves signed/secret webhook receipt, selected-alert filtering, retries/replay behavior, activation rollback, and safe shared-artifact cleanup.
+The implemented suites authenticate; ingest timestamped JSON logs; confirm inferred streams/schema; query with SQL/date/offset/limit; retrieve field values and search around; ingest JSON metrics and query them with PromQL; validate and create a VRL function; exercise Dashboard, Alert, and Pipeline lifecycles; and delete only exact-owned resources. Trace reads run separately. Trigger coverage proves secret-authenticated receipt, selected-alert attachment, activation rollback, restart reconciliation, and safe shared-artifact cleanup. It does not claim replay suppression: OpenObserve retries may yield duplicate executions, so downstream exactly-once effects require workflow-level deduplication/idempotency.
 
 ## Error and security coverage
 
-Required cases include invalid credentials, missing org/stream/resource, malformed raw JSON, wrong JSON type, invalid SQL/PromQL/VRL, time conversion boundaries, encoded path characters, partial ingestion errors, API rate/timeout/server errors, oversized responses, secret redaction, TLS defaults, hostile webhook payloads, bad/missing trigger headers, replayed events, and refusal to delete unowned artifacts. Destructive operations must not retry automatically.
+Covered cases include invalid credentials, missing org/stream/resource, malformed raw JSON, wrong JSON type, invalid SQL/PromQL/VRL, time conversion boundaries, encoded path characters, partial ingestion errors, API and connection errors, secret redaction, hostile/malformed webhook payloads, duplicate/bad/missing trigger headers, and refusal to delete unowned artifacts. Destructive operations do not retry automatically. Rate-limit load behavior and oversized-response stress testing remain operational validation items rather than 0.1.0 unit claims.
 
 ## CI and upgrade policy
 

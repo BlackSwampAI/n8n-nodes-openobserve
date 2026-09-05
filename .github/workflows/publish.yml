@@ -86,9 +86,28 @@ jobs:
       - name: Audit release configuration
         run: npm run release:check
 
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Inspect package boundary
+        run: npm run package:check
+
       - name: Release
         # Publishes to npm with a provenance attestation (requires id-token: write above).
-        # Lint and build run automatically as part of the release process.
+        # The complete prepublication gates above run before the CLI's CI-mode
+        # lint/build/publish path. The pushed tag must already name package.json's version.
         #
         # Option A (OIDC): leave NPM_TOKEN unset — the token step is skipped and
         #   npm uses the OIDC exchange instead.
