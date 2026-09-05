@@ -26,6 +26,7 @@ export interface OpenObserveRequestOptions {
 	returnFullResponse?: boolean;
 	timeout?: number;
 	itemIndex?: number;
+	sensitiveValues?: string[];
 }
 
 export type OpenObserveRequestContext =
@@ -76,7 +77,7 @@ export async function openObserveApiRequest<T>(
 	} catch (error) {
 		throw normalizeOpenObserveError(this.getNode(), error, {
 			itemIndex: options.itemIndex,
-			secrets: [accountIdentifier, secret],
+			secrets: [accountIdentifier, secret, ...(options.sensitiveValues ?? [])],
 		});
 	}
 }

@@ -7,4 +7,5 @@
 - Added Stream management and ordinary structured JSON Log Ingest/Ingest Many operations with strict unit and pinned OSS integration coverage.
 - Added SQL Search, ordinary JSON metric ingestion, Prometheus-compatible metric reads, and read-only Trace Latest/DAG operations with guarded pinned-OSS coverage.
 - Added Function lifecycle and VRL validation plus version-preserving Dashboard lifecycle operations with guarded pinned-OSS coverage; panel CRUD remains deferred.
+- Added Alert Template, webhook Destination, and current-v2 scheduled/real-time Alert automation with header redaction and guarded local alert-to-webhook coverage.
 - No package has been released.

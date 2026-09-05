@@ -3,6 +3,7 @@ import type {
 	ILoadOptionsFunctions,
 	INodeExecutionData,
 	INodeListSearchResult,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
@@ -23,6 +24,12 @@ import { functionProperties } from './resources/function/descriptions';
 import { executeFunction } from './resources/function/execute';
 import { dashboardProperties } from './resources/dashboard/descriptions';
 import { executeDashboard } from './resources/dashboard/execute';
+import { alertTemplateProperties } from './resources/alertTemplate/descriptions';
+import { executeAlertTemplate } from './resources/alertTemplate/execute';
+import { alertDestinationProperties } from './resources/alertDestination/descriptions';
+import { executeAlertDestination } from './resources/alertDestination/execute';
+import { alertProperties } from './resources/alert/descriptions';
+import { executeAlert } from './resources/alert/execute';
 import { normalizeOpenObserveError } from './shared/errors';
 import { openObserveApiRequest } from './shared/transport';
 
@@ -66,6 +73,9 @@ export class OpenObserve implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
+					{ name: 'Alert', value: 'alert' },
+					{ name: 'Alert Destination', value: 'alertDestination' },
+					{ name: 'Alert Template', value: 'alertTemplate' },
 					{ name: 'Dashboard', value: 'dashboard' },
 					{ name: 'Function', value: 'function' },
 					{ name: 'Log', value: 'log' },
@@ -83,11 +93,121 @@ export class OpenObserve implements INodeType {
 			...traceProperties,
 			...functionProperties,
 			...dashboardProperties,
+			...alertTemplateProperties,
+			...alertDestinationProperties,
+			...alertProperties,
 		],
 	};
 
 	methods = {
+		loadOptions: {
+			async getAlertDestinations(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const response = await openObserveApiRequest.call(this, {
+					pathSegments: ['alerts', 'destinations'],
+					query: { module: 'alert' },
+				});
+				return (Array.isArray(response) ? response : [])
+					.filter(
+						(entry): entry is { name: string } =>
+							typeof entry === 'object' &&
+							entry !== null &&
+							typeof (entry as { name?: unknown }).name === 'string',
+					)
+					.map((entry) => ({ name: entry.name, value: entry.name }));
+			},
+		},
 		listSearch: {
+			async searchAlertFolders(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const response = (await openObserveApiRequest.call(this, {
+					apiPathMode: 'v2',
+					pathSegments: ['folders', 'alerts'],
+				})) as { list?: Array<{ folderId?: string; name?: string }> };
+				const needle = (filter ?? '').toLowerCase();
+				const results = [
+					...(needle && !'default'.includes(needle) ? [] : [{ name: 'Default', value: 'default' }]),
+					...(response.list ?? [])
+						.filter(
+							(entry) =>
+								entry.folderId &&
+								entry.folderId !== 'default' &&
+								entry.name?.toLowerCase().includes(needle),
+						)
+						.map((entry) => ({ name: entry.name as string, value: entry.folderId as string })),
+				];
+				return { results: [...new Map(results.map((entry) => [entry.value, entry])).values()] };
+			},
+			async searchAlertTemplates(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const response = await openObserveApiRequest.call(this, {
+					pathSegments: ['alerts', 'templates'],
+				});
+				const needle = (filter ?? '').toLowerCase();
+				return {
+					results: (Array.isArray(response) ? response : [])
+						.filter(
+							(entry): entry is { name: string } =>
+								typeof entry === 'object' &&
+								entry !== null &&
+								typeof (entry as { name?: unknown }).name === 'string' &&
+								(entry as { name: string }).name.toLowerCase().includes(needle),
+						)
+						.map((entry) => ({ name: entry.name, value: entry.name })),
+				};
+			},
+			async searchAlertDestinations(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const response = await openObserveApiRequest.call(this, {
+					pathSegments: ['alerts', 'destinations'],
+					query: { module: 'alert' },
+				});
+				const needle = (filter ?? '').toLowerCase();
+				return {
+					results: (Array.isArray(response) ? response : [])
+						.filter(
+							(entry): entry is { name: string } =>
+								typeof entry === 'object' &&
+								entry !== null &&
+								typeof (entry as { name?: unknown }).name === 'string' &&
+								(entry as { name: string }).name.toLowerCase().includes(needle),
+						)
+						.map((entry) => ({ name: entry.name, value: entry.name })),
+				};
+			},
+			async searchAlerts(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const selectedFolder = this.getNodeParameter('alertFolder', 'default');
+				const folder =
+					typeof selectedFolder === 'object' && selectedFolder !== null && 'value' in selectedFolder
+						? String(selectedFolder.value || 'default')
+						: String(selectedFolder || 'default');
+				const response = (await openObserveApiRequest.call(this, {
+					apiPathMode: 'v2',
+					pathSegments: ['alerts'],
+					query: {
+						folder,
+						page_size: 100,
+						page_idx: 0,
+						...(filter ? { alert_name_substring: filter } : {}),
+					},
+				})) as { list?: Array<{ id?: string; name?: string }> };
+				return {
+					results: (response.list ?? [])
+						.filter((entry) => entry.id)
+						.map((entry) => ({
+							name: entry.name || (entry.id as string),
+							value: entry.id as string,
+						})),
+				};
+			},
 			async searchFunctions(
 				this: ILoadOptionsFunctions,
 				filter?: string,
@@ -178,6 +298,9 @@ export class OpenObserve implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const input = this.getInputData();
 		const resource = this.getNodeParameter('resource', 0) as
+			| 'alert'
+			| 'alertDestination'
+			| 'alertTemplate'
 			| 'dashboard'
 			| 'function'
 			| 'log'
@@ -225,7 +348,13 @@ export class OpenObserve implements INodeType {
 					output.push(...(await executeTrace(this, operation, itemIndex)));
 				else if (resource === 'function')
 					output.push(...(await executeFunction(this, operation, itemIndex)));
-				else output.push(...(await executeDashboard(this, operation, itemIndex)));
+				else if (resource === 'dashboard')
+					output.push(...(await executeDashboard(this, operation, itemIndex)));
+				else if (resource === 'alertTemplate')
+					output.push(...(await executeAlertTemplate(this, operation, itemIndex)));
+				else if (resource === 'alertDestination')
+					output.push(...(await executeAlertDestination(this, operation, itemIndex)));
+				else output.push(...(await executeAlert(this, operation, itemIndex)));
 			} catch (error) {
 				const normalized = executionError(this, error, itemIndex);
 				if (!this.continueOnFail()) throw normalized;

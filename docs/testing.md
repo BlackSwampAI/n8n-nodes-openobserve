@@ -21,6 +21,16 @@ These values are fixtures, not production secrets. The port binds to loopback. T
 - `tests/search-metrics-traces.test.ts`: mocked request construction, validation, response normalization, repeated-parameter encoding, and metadata visibility for Batch 3.
 - `tests/functions-dashboards.test.ts`: mocked VRL-only Function and Dashboard request construction, omission-preserving merge/concurrency behavior, folder-aware selectors, validation, limits, and lineage.
 - `tests/functions-dashboards.live.test.ts`: opt-in exact-owned Function and Dashboard lifecycle in the disposable local `default` organization. It validates good/bad VRL and cleans only the exact run-scoped function and dashboard IDs in `finally`; no folders or panels are created or deleted.
+- `tests/alert-infrastructure.test.ts`: mocked coverage for every Alert Template, Alert Destination, and Alert operation, current/mixed API routing, selectors, pagination, validation, response redaction, and lineage.
+- `tests/alert-infrastructure.live.test.ts`: opt-in exact-owned real-time alert-to-webhook lifecycle. It refuses non-loopback API targets, non-`default` organizations, and receiver addresses outside the Docker private range. Determine the Compose bridge gateway and pass it as `OPENOBSERVE_LIVE_RECEIVER_HOST`; the fixture creates and removes only its exact stream/template/destination/alert/clone.
+
+After starting Compose, read its current bridge gateway and pass that exact value to the Batch 5 fixture:
+
+```bash
+OPENOBSERVE_LIVE_RECEIVER_HOST="$(docker network inspect n8n-nodes-openobserve_default --format '{{(index .IPAM.Config 0).Gateway}}')"
+OPENOBSERVE_LIVE=1 OPENOBSERVE_LIVE_RECEIVER_HOST="$OPENOBSERVE_LIVE_RECEIVER_HOST" npm test -- --run tests/alert-infrastructure.live.test.ts
+```
+
 - `tests/search-metrics-traces.live.test.ts`: guarded loopback-only Search/Metric flow, including JSON rows plus CSV and Markdown query output, and honest empty/missing Trace behavior. It creates three exact run-scoped streams, deletes each with `delete_all=false`, and confirms absence in `finally`; it never seeds traces through an out-of-scope ingestion route.
 - `tests/contract/oss/`: one suite against the pinned container, independently runnable.
 - `tests/contract/cloud/`: the same safe reads plus isolated writes against a designated non-production Cloud org; credentials come only from CI secrets.
@@ -29,6 +39,8 @@ These values are fixtures, not production secrets. The port binds to loopback. T
 All automated tests are TypeScript `*.test.ts` files run by Vitest. Direct-execution `.mjs` files are reserved for operational and release tooling rather than test suites.
 
 Fixtures use unique, deterministic prefixes plus a run ID. Tests create only owned resources and clean them in reverse dependency order. Golden payloads must be small, hand-authored, scrubbed, and tied to the pinned version; never copy the full generated API client/spec.
+
+The Compose harness sets `ZO_SKIP_SSRF_CHECKS=true` solely so pinned OpenObserve can reach the disposable receiver on its private Docker bridge. This intentionally weakens outbound URL protection and must never be copied into production or any shared deployment. Production should retain OpenObserve's default SSRF protections.
 
 ## Local smoke procedure
 
