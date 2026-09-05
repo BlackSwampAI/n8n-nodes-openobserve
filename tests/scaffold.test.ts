@@ -23,8 +23,11 @@ test('package identity and runtime boundary are frozen', () => {
 	assert.equal(packageJson.peerDependencies['n8n-workflow'], '*');
 });
 
-test('the active Batch 2 OpenObserve node and API credential are registered', () => {
-	assert.deepEqual(packageJson.n8n.nodes, ['dist/nodes/OpenObserve/OpenObserve.node.js']);
+test('the OpenObserve action and trigger nodes and API credential are registered', () => {
+	assert.deepEqual(packageJson.n8n.nodes, [
+		'dist/nodes/OpenObserve/OpenObserve.node.js',
+		'dist/nodes/OpenObserveTrigger/OpenObserveTrigger.node.js',
+	]);
 	assert.deepEqual(packageJson.n8n.credentials, ['dist/credentials/OpenObserveApi.credentials.js']);
 });
 

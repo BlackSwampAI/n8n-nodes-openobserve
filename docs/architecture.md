@@ -8,14 +8,14 @@ nodes/
     OpenObserve.node.ts       action-node registration and routing
     resources/<resource>/     operation descriptions, types, and execution
     shared/                   transport, pagination, errors, JSON, dates
-  OpenObserveTrigger/         alert webhook trigger after feasibility gate
+  OpenObserveTrigger/         owned alert-webhook lifecycle and execution
 credentials/
   OpenObserveApi.credentials.ts
 tests/
   unit/ contract/ e2e/
 ```
 
-Batch 0 registered the shell; Batches 1–4 added credentials/shared transport and bounded Stream, Log, Search, Metric, Trace, Function, and Dashboard modules. Later batches add bounded resource groups and their tests; trigger registration remains gated.
+Batches 1–6 added credentials/shared transport, bounded action resources, alert infrastructure, and the selected-alert trigger. Later batches add only the remaining bounded resource groups and their tests.
 
 ## API and authentication boundary
 
@@ -29,9 +29,9 @@ Common fields get typed n8n controls. Complex OpenObserve schemas use a raw JSON
 
 ## Trigger ownership and safety
 
-The trigger is limited to “Alert Triggered.” Preferred automation creates or reuses a template and webhook destination, validates a non-URL secret header, and attaches only explicitly selected alerts. Every created artifact must carry an ownership marker derived from workflow/node identity, be read back before mutation, and be removed only when still owned and unshared. Existing user artifacts are never adopted or deleted. If OpenObserve cannot guarantee this lifecycle through supported APIs, activation fails closed to documented manual attachment; deactivation only removes n8n state.
+The trigger is limited to “Alert Triggered.” Activation creates or reconciles one deterministic template and webhook destination, validates a non-URL secret header, and attaches only explicitly selected alerts. Persistent node static data records ownership and the random secret. Every owned artifact is read back and matched on stable content before mutation or deletion; existing user artifacts are never adopted or deleted. Deactivation performs full-alert GET/PUT preservation, bounded confirmation polling, fail-closed cross-folder reference scans, and dependency-ordered cleanup. Ambiguous or shared artifacts are retained with an actionable error and persistent ownership state.
 
-SSRF risk is minimized because OpenObserve calls the n8n webhook, not a user-selected arbitrary target through n8n. Secrets must never appear in names, logs, outputs, or query strings. Payload authenticity, replay handling, retries, and activation rollback require focused tests before registration.
+SSRF risk is minimized because OpenObserve calls the n8n webhook, not a user-selected arbitrary target through n8n. Secrets must never appear in names, logs, outputs, or query strings. The shared secret authenticates delivery, but OpenObserve retries can produce duplicate workflow executions because there is no universal stable event ID. Workflows needing exactly-once effects must deduplicate or make downstream effects idempotent; trigger time plus alert identity can assist with an application-specific key.
 
 ## Licensing boundary
 
@@ -58,6 +58,7 @@ This repository is an independent MIT-licensed API integration and is not affili
 - Batch 3: SQL Search, ordinary JSON metrics plus Prometheus-compatible reads, and OSS-safe Trace Latest/DAG reads. Enterprise-only Service Graph is deferred.
 - Batch 4: Function lifecycle/VRL validation and version-preserving Dashboard lifecycle. Panel CRUD remains deferred.
 - Batch 5: reusable Alert Templates and webhook Destinations plus current-v2 scheduled/real-time Alert lifecycle and mixed-version history. Destination response headers are always redacted.
+- Batch 6: the Alert Triggered webhook owns deterministic template/destination names and a random per-node secret in node static data. Activation unions its destination into selected alerts through full v2 GET/PUT preservation; rollback and deactivation remove only owned changes. Name collisions or changed ownership fields fail closed.
 - Later action batches: implement only matrix operations with focused unit + OSS/Cloud contract tests.
 - Trigger batch: only after the documented feasibility and safety gate.
 - Release batch: UX audit, compatibility declaration, package install test, first-publication bootstrap, provenance verification.
