@@ -21,6 +21,7 @@
 ## Repository safeguards
 
 - Preserve unrelated changes in the worktree.
+- Write automated tests as `*.test.ts` files and run them with Vitest. Reserve `.mjs` for genuine direct-execution operational or release tooling; document any exception.
 - Use the scripts in `package.json` for validation. At minimum, run relevant focused checks; for completed code changes, run `npm run lint` and `npm run build` when practical.
 - Do not publish packages, create releases or tags, push commits, or open pull requests unless the user explicitly asks.
 - Follow `RELEASING.md` for any authorized release work.

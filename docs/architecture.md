@@ -15,13 +15,13 @@ tests/
   unit/ contract/ e2e/
 ```
 
-Batch 0 registers only an inert, compile-safe action-node shell. It contains no credentials, network transport, resource operations, or trigger registration. Batch 1 owns credentials and the API foundation; later batches add bounded resource groups and their tests.
+Batch 0 registered an inert, compile-safe action-node shell. Batch 1 adds its credential and shared API foundation without adding resource operations or trigger registration; later batches add bounded resource groups and their tests.
 
 ## API and authentication boundary
 
-The future credential stores a base URL (self-hosted or Cloud), organization identifier, and supported authentication fields. The organization is interpolated into the path by one shared helper, never concatenated ad hoc by operations. Base URLs are normalized once and HTTPS is required by default; any local HTTP allowance must be explicit and non-secret. Basic authentication is documented by the current API index, but exact Cloud/self-hosted credential choices and n8n credential tests remain a Batch 1 decision requiring live verification.
+The implemented OpenObserve API credential requires a Base URL, Organization ID, Email / Account Identifier, and password-protected Secret. The required Base URL defaults to empty so the integration never assumes a Cloud or self-hosted deployment; validation accepts HTTP and HTTPS roots, including reverse-proxy paths, and normalization removes redundant trailing slashes. HTTPS is strongly recommended for every non-local deployment, but is not enforced because local and self-hosted OpenObserve installations may intentionally use HTTP. Requests use HTTP Basic authentication with the account identifier as the username and the Secret as either a user password or supported self-hosted service-account token. The organization is encoded into the path by a shared helper, never concatenated ad hoc by operations.
 
-Shared helpers will own authenticated requests, path-segment encoding, time conversion to API units, query serialization (including repeated Prometheus parameters), pagination, retry classification, binary responses, response normalization, and actionable `NodeApiError` construction. Operations must not duplicate transport or silently fall back from v2 to deprecated endpoints.
+Shared helpers own authenticated requests, path-segment encoding, time conversion to API units, query serialization (including repeated Prometheus parameters), pagination, binary responses, response normalization, and actionable n8n error construction. The transport does not retry requests. Operations must not duplicate transport or silently fall back from v2 to deprecated endpoints.
 
 ## Input and output strategy
 
@@ -41,7 +41,7 @@ This repository is an independent MIT-licensed API integration and is not affili
 
 1. **One conventional action node plus one webhook trigger.** Resource/operation routing keeps n8n discovery simple; separate internal modules keep code reviewable.
 2. **Generated OAS is structural authority; human docs are semantic authority; live tests decide behavior.** Conflicts remain visible in `api-matrix.md` rather than guessed away.
-3. **Prefer current v2 endpoints.** Alerts use `/api/v2`; legacy alert CRUD is not a fallback. Mixed-version routes such as alert history are retained only where the current contract does so.
+3. **Prefer current v2 endpoints through explicit routing.** Shared transport defaults to unversioned `/api/{org}` paths and requires operations such as Alerts to select `/api/v2/{org}` explicitly. Legacy alert CRUD is not a fallback. Mixed-version routes such as alert history are retained only where the current contract does so.
 4. **No runtime dependencies.** `n8n-workflow` remains host-provided. Additions require an architecture and verification review.
 5. **Raw JSON for high-entropy schemas.** This avoids brittle, incomplete UI while retaining controlled transport and validation.
 6. **Destructive and side-effecting operations are explicit.** Stream deletion, field deletion, manual alert triggering, and trigger artifact cleanup require clear labels and tests.

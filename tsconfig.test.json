@@ -1,0 +1,13 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"declaration": false,
+		"sourceMap": false,
+		"target": "es2020",
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"types": ["node", "vitest/globals"]
+	},
+	"include": ["credentials/**/*", "nodes/**/*", "tests/**/*", "vitest.config.mts"]
+}

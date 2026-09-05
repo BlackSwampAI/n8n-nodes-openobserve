@@ -14,11 +14,14 @@ These values are fixtures, not production secrets. The port binds to loopback. T
 
 ## Suites and fixtures
 
-- `tests/scaffold.test.mjs`: Batch 0 identity/packaging invariants; no server needed.
-- `tests/unit/`: operation parameters, JSON/date conversion, URL encoding, errors, and pagination; starts in Batch 1.
+- `tests/scaffold.test.ts`: identity and packaging invariants; no server needed.
+- `tests/foundation.test.ts`: credential, transport, JSON/date conversion, URL encoding, error, pagination, and local-harness invariants; no server needed.
+- Future `tests/unit/` suites: operation parameters and resource-specific behavior, added with their implementation batch.
 - `tests/contract/oss/`: one suite against the pinned container, independently runnable.
 - `tests/contract/cloud/`: the same safe reads plus isolated writes against a designated non-production Cloud org; credentials come only from CI secrets.
 - `tests/e2e/`: n8n workflow execution and trigger lifecycle, added with the corresponding features.
+
+All automated tests are TypeScript `*.test.ts` files run by Vitest. Direct-execution `.mjs` files are reserved for operational and release tooling rather than test suites.
 
 Fixtures use unique, deterministic prefixes plus a run ID. Tests create only owned resources and clean them in reverse dependency order. Golden payloads must be small, hand-authored, scrubbed, and tied to the pinned version; never copy the full generated API client/spec.
 
@@ -26,14 +29,14 @@ Fixtures use unique, deterministic prefixes plus a run ID. Tests create only own
 
 ```sh
 docker compose config
-docker compose up -d openobserve
+docker compose up -d --wait openobserve
 curl --fail --silent http://127.0.0.1:5080/healthz
 curl --fail --silent --user 'root@example.test:OpenObserve-Local-Test-Only-9x!' \
   'http://127.0.0.1:5080/api/default/streams?type=logs'
 docker compose down
 ```
 
-Health and authenticated stream-list calls are separate so startup cannot be mistaken for working authentication/organization routing. Never run the fixtures against an unrecognized base URL or organization.
+The container healthcheck uses the distroless image's native `/openobserve node list` command; it proves that the initialized node reports successfully without depending on a shell or curl inside the image. It does not prove HTTP readiness or authentication. The host-side HTTP health and authenticated stream-list calls are the authoritative API smoke checks and remain separate so process initialization cannot be mistaken for working HTTP/authentication/organization routing. Never run the fixtures against an unrecognized base URL or organization.
 
 ## Core E2E scenario
 
@@ -48,3 +51,9 @@ Required cases include invalid credentials, missing org/stream/resource, malform
 CI runs frozen install, formatting, n8n lint, TypeScript typecheck, unit tests, build, release audit, and dry-run package inspection. Docker contract tests remain independent so normal code checks do not silently depend on a service.
 
 Upgrade only to a non-prerelease OpenObserve release after reviewing release notes, resolving the image digest, diffing relevant local and Cloud OAS paths/components, running OSS and Cloud suites, and updating `api-matrix.md` plus this file. An RC never replaces the stable baseline. Feature tests are deferred until their implementation batch; Batch 0 proves only scaffold/package invariants and the server smoke.
+
+## Batch 1 live result
+
+On 2026-09-05, pinned v0.92.2 passed health, root email/password Basic auth, and disposable self-hosted service-account email/token Basic auth through `GET /api/default/streams?type=logs&limit=1`. Invalid credentials returned 401 and a missing organization returned 404. The service account was deleted, absence was confirmed by listing accounts, and the temporary token response was removed. The container was stopped without `-v`, preserving the non-production named volume for repeatable local work. Cloud execution remains unverified because no designated Cloud test credentials were provided.
+
+After removing the Cloud Base URL default, the root-user smoke was repeated through the compiled `OpenObserveApi.authenticate` function: it replaced the non-routable credential-test sentinel with the configured loopback Base URL, encoded the organization path, applied Basic auth, and received a 200 stream-list response with the expected shape.

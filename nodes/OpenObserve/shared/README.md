@@ -1,5 +1,5 @@
-# Shared API layer (Batch 1)
+# Shared API layer
 
-This directory is reserved for request transport, authentication, organization-path handling, pagination, normalization, and error helpers described in `docs/architecture.md`.
+This directory contains the Batch 1 request transport, authentication, organization-path, pagination, query, time, validation, and error helpers described in `docs/architecture.md` and `docs/api-foundation.md`.
 
-Batch 0 deliberately contains no request implementation.
+Business-resource operations remain deferred to later batches.
