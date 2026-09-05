@@ -37,14 +37,22 @@ function executeContext(
 }
 
 describe('Stream and Log node metadata', () => {
-	it('exposes only the Batch 2 resources and their operations', () => {
+	it('retains the Batch 2 resources and their operations', () => {
 		const properties = new OpenObserve().description.properties;
 		const resource = properties.find((property) => property.name === 'resource');
-		expect(resource?.options).toMatchObject([
-			{ name: 'Log', value: 'log' },
-			{ name: 'Stream', value: 'stream' },
-		]);
-		const operationProperties = properties.filter((property) => property.name === 'operation');
+		expect(resource?.options).toEqual(
+			expect.arrayContaining([
+				{ name: 'Log', value: 'log' },
+				{ name: 'Stream', value: 'stream' },
+			]),
+		);
+		const operationProperties = properties.filter(
+			(property) =>
+				property.name === 'operation' &&
+				['stream', 'log'].some((resourceName) =>
+					property.displayOptions?.show?.resource?.includes(resourceName),
+				),
+		);
 		expect(operationProperties).toHaveLength(2);
 		expect(operationProperties[0].displayOptions?.show?.resource).toEqual(['stream']);
 		expect(operationProperties[1].displayOptions?.show?.resource).toEqual(['log']);
