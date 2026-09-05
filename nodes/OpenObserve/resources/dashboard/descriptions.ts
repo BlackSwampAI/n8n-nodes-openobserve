@@ -1,6 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 const show = (operations: string[]) => ({
-	show: { resource: ['dashboard'], operation: operations },
+	displayOptions: { show: { resource: ['dashboard'], operation: operations } },
 });
 const selected = ['get', 'update', 'delete'];
 export const dashboardProperties: INodeProperties[] = [

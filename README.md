@@ -32,10 +32,10 @@ Service accounts are preferred for self-hosted production automation. OpenObserv
 
 ## Operations
 
-- Stream: Create, Get Many, Get Schema, Update Settings, Delete Fields, and Delete for log, metric, and trace stream types.
+- Stream: Get Many, Get Schema, Update Settings, Delete Fields, and Delete for log, metric, and trace stream types.
 - Log: Ingest one structured JSON object or batch all n8n input-item JSON objects through OpenObserve's ordinary JSON-array endpoint.
 - Search: SQL Query, Get Field Values, and current POST Search Around.
-- Metric: ordinary JSON Ingest/Ingest Many plus PromQL instant/range queries, metadata, labels, label values, and series discovery.
+- Metric: PromQL instant/range queries, metadata, labels, label values, and series discovery.
 - Trace: read-only Get Latest and Get DAG. Enterprise-only Service Graph is not exposed.
 - Function: Create, Get Many, Get Dependencies, Update, Delete, and Validate VRL.
 - Dashboard: Create, Get, Get Many, Update, and Delete with version/hash-preserving updates.
@@ -45,7 +45,7 @@ Service accounts are preferred for self-hosted production automation. OpenObserv
 - OpenObserve Trigger: Alert Triggered for explicitly selected alerts, with secret-authenticated webhook delivery and owned lifecycle artifacts.
 - Pipeline: real-time and scheduled Create, Get, Get Many, Update, Delete, Enable/Disable, and Get History using validated structured graphs.
 
-Ingestion can infer and create log or metric streams. Destructive operations and manual alert triggering require confirmation. Deferred and potential post-v0.1 surfaces are documented in [docs/api-matrix.md](docs/api-matrix.md); panel CRUD and Enterprise-only Service Graph remain deferred.
+Log ingestion can infer and create its target stream. Continuous metrics should arrive through native collectors such as Prometheus, Telegraf, or OpenTelemetry; n8n focuses on log events, search/query, configuration, alerts/triggers, and remediation. Destructive operations and manual alert triggering require confirmation. Deferred and potential post-v0.1 surfaces are documented in [docs/api-matrix.md](docs/api-matrix.md); explicit stream provisioning, metric ingestion, panel CRUD, and Enterprise-only Service Graph remain deferred.
 
 ## Usage
 

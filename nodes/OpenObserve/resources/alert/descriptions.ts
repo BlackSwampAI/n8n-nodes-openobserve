@@ -1,5 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
-const show = (operations: string[]) => ({ show: { resource: ['alert'], operation: operations } });
+const show = (operations: string[]) => ({
+	displayOptions: { show: { resource: ['alert'], operation: operations } },
+});
 const selected = ['get', 'update', 'delete', 'enable', 'disable', 'trigger', 'clone', 'export'];
 export const alertProperties: INodeProperties[] = [
 	{

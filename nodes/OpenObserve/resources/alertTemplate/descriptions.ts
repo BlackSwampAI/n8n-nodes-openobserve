@@ -1,7 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
 
 const show = (operations: string[]) => ({
-	show: { resource: ['alertTemplate'], operation: operations },
+	displayOptions: { show: { resource: ['alertTemplate'], operation: operations } },
 });
 
 export const alertTemplateProperties: INodeProperties[] = [

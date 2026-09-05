@@ -2,12 +2,6 @@ import type { INodeProperties } from 'n8n-workflow';
 
 const streamOperations = [
 	{
-		name: 'Create',
-		value: 'create',
-		action: 'Create a stream',
-		description: 'Create a stream with an optional user-defined schema',
-	},
-	{
 		name: 'Delete',
 		value: 'delete',
 		action: 'Delete a stream',
@@ -83,16 +77,6 @@ export const streamProperties: INodeProperties[] = [
 		displayOptions: { show: { resource: ['stream'] } },
 	},
 	{
-		displayName: 'Stream Name',
-		name: 'streamName',
-		type: 'string',
-		required: true,
-		default: '',
-		placeholder: 'my_stream',
-		description: 'Ingestion can also infer and create a log stream automatically',
-		displayOptions: { show: { resource: ['stream'], operation: ['create'] } },
-	},
-	{
 		...existingStream,
 		displayOptions: {
 			show: {
@@ -102,20 +86,12 @@ export const streamProperties: INodeProperties[] = [
 		},
 	},
 	{
-		displayName: 'Fields JSON',
-		name: 'fieldsJson',
-		type: 'json',
-		default: '[]',
-		description: 'Optional user-defined schema fields, each with name and OpenObserve type',
-		displayOptions: { show: { resource: ['stream'], operation: ['create'] } },
-	},
-	{
 		displayName: 'Settings JSON',
 		name: 'settingsJson',
 		type: 'json',
 		default: '{}',
 		description: 'OpenObserve stream settings object; only supplied keys are changed',
-		displayOptions: { show: { resource: ['stream'], operation: ['create', 'updateSettings'] } },
+		displayOptions: { show: { resource: ['stream'], operation: ['updateSettings'] } },
 	},
 	{
 		displayName: 'Fields',

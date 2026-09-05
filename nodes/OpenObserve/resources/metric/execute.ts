@@ -1,5 +1,4 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
-import { requireJsonObject, type JsonRecord } from '../../shared/json';
 import { requirePositiveSafeInteger } from '../../shared/numbers';
 import { openObserveApiRequest } from '../../shared/transport';
 import { OpenObserveValidationError } from '../../shared/validation-error';
@@ -8,14 +7,6 @@ interface PromEnvelope {
 	status?: string;
 	data?: unknown;
 	error?: string;
-}
-interface MetricStatus {
-	name?: string;
-	successful?: number;
-	failed?: number;
-}
-interface MetricIngest extends IDataObject {
-	status?: MetricStatus[];
 }
 const getParameter = <T>(
 	context: IExecuteFunctions,
@@ -85,49 +76,6 @@ function isPositivePrometheusStep(value: string): boolean {
 	const duration =
 		/^(?:(\d+)y)?(?:(\d+)w)?(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?(?:(\d+)ms)?$/.exec(value);
 	return duration !== null && duration.slice(1).some((component) => Number(component ?? 0) > 0);
-}
-
-function ingestResult(response: MetricIngest, records: number): IDataObject {
-	const status = Array.isArray(response.status) ? response.status : [];
-	const successful = status.reduce((total, entry) => total + (entry.successful ?? 0), 0);
-	const failed = status.reduce((total, entry) => total + (entry.failed ?? 0), 0);
-	return { ...response, records, successful, failed, partialFailure: failed > 0 };
-}
-export async function ingestMetric(
-	context: IExecuteFunctions,
-	itemIndex: number,
-): Promise<INodeExecutionData> {
-	const record = requireJsonObject(
-		context.getNodeParameter('metricJson', itemIndex, '{}'),
-		'Metric JSON',
-		itemIndex,
-	);
-	const response = (await openObserveApiRequest.call(context, {
-		method: 'POST',
-		pathSegments: ['ingest', 'metrics', '_json'],
-		body: [record],
-		itemIndex,
-	})) as MetricIngest;
-	return { json: ingestResult(response, 1), pairedItem: { item: itemIndex } };
-}
-export async function ingestManyMetrics(
-	context: IExecuteFunctions,
-	input: INodeExecutionData[],
-): Promise<INodeExecutionData> {
-	if (!input.length)
-		throw new OpenObserveValidationError('Ingest Many requires at least one input item');
-	const records: JsonRecord[] = input.map((item, itemIndex) =>
-		requireJsonObject(item.json, 'Input item JSON', itemIndex),
-	);
-	const response = (await openObserveApiRequest.call(context, {
-		method: 'POST',
-		pathSegments: ['ingest', 'metrics', '_json'],
-		body: records,
-	})) as MetricIngest;
-	return {
-		json: ingestResult(response, records.length),
-		pairedItem: input.map((_inputItem, item) => ({ item })),
-	};
 }
 
 export async function executeMetric(

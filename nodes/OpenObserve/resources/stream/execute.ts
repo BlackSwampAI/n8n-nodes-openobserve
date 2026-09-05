@@ -1,6 +1,6 @@
 import type { IExecuteFunctions, INodeExecutionData, IDataObject } from 'n8n-workflow';
 
-import { requireJsonArray, requireJsonObject } from '../../shared/json';
+import { requireJsonObject } from '../../shared/json';
 import { collectPaginated } from '../../shared/pagination';
 import { openObserveApiRequest } from '../../shared/transport';
 import { OpenObserveValidationError } from '../../shared/validation-error';
@@ -69,26 +69,6 @@ export async function executeStreamItem(
 ): Promise<INodeExecutionData> {
 	const type = streamType(context, itemIndex);
 	const name = streamName(context, itemIndex);
-	if (operation === 'create') {
-		const fields = requireJsonArray(
-			context.getNodeParameter('fieldsJson', itemIndex, '[]'),
-			'Fields JSON',
-			itemIndex,
-		);
-		const settings = requireJsonObject(
-			context.getNodeParameter('settingsJson', itemIndex, '{}'),
-			'Settings JSON',
-			itemIndex,
-		);
-		const response = await openObserveApiRequest.call(context, {
-			method: 'POST',
-			pathSegments: ['streams', name],
-			query: { type },
-			body: { fields, settings },
-			itemIndex,
-		});
-		return asItem(response, itemIndex);
-	}
 	if (operation === 'getSchema') {
 		const keyword = (context.getNodeParameter('keyword', itemIndex, '') as string).trim();
 		const response = await openObserveApiRequest.call(context, {

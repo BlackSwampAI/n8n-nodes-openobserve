@@ -1,5 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
-const show = (operations: string[]) => ({ show: { resource: ['metric'], operation: operations } });
+const show = (operations: string[]) => ({
+	displayOptions: { show: { resource: ['metric'], operation: operations } },
+});
 const queryOps = ['instantQuery', 'rangeQuery'];
 const selectorOps = ['getLabels', 'getLabelValues', 'findSeries'];
 export const metricProperties: INodeProperties[] = [
@@ -15,19 +17,9 @@ export const metricProperties: INodeProperties[] = [
 			{ name: 'Get Label Values', value: 'getLabelValues', action: 'Get label values' },
 			{ name: 'Get Labels', value: 'getLabels', action: 'Get labels' },
 			{ name: 'Get Metadata', value: 'getMetadata', action: 'Get metric metadata' },
-			{ name: 'Ingest', value: 'ingest', action: 'Ingest one metric' },
-			{ name: 'Ingest Many', value: 'ingestMany', action: 'Ingest input metrics' },
 			{ name: 'Instant Query', value: 'instantQuery', action: 'Run an instant prom ql query' },
 			{ name: 'Range Query', value: 'rangeQuery', action: 'Run a range prom ql query' },
 		],
-	},
-	{
-		displayName: 'Metric JSON',
-		name: 'metricJson',
-		type: 'json',
-		required: true,
-		default: '{}',
-		...show(['ingest']),
 	},
 	{
 		displayName: 'PromQL',

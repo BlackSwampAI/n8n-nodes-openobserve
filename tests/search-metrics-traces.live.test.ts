@@ -11,7 +11,7 @@ import type {
 } from 'n8n-workflow';
 import { describe, expect, it } from 'vitest';
 import { ingestManyLogs } from '../nodes/OpenObserve/resources/log/execute';
-import { executeMetric, ingestManyMetrics } from '../nodes/OpenObserve/resources/metric/execute';
+import { executeMetric } from '../nodes/OpenObserve/resources/metric/execute';
 import { executeSearch } from '../nodes/OpenObserve/resources/search/execute';
 import { executeStreamItem, getManyStreams } from '../nodes/OpenObserve/resources/stream/execute';
 import { executeTrace } from '../nodes/OpenObserve/resources/trace/execute';
@@ -116,6 +116,26 @@ async function waitFor(
 	throw new Error(`Owned ${type} stream ${name} did not reach expected state`);
 }
 
+async function seedMetrics(): Promise<void> {
+	await request({
+		method: 'POST',
+		url: `${baseUrl}/api/${organizationId}/ingest/metrics/_json`,
+		body: [
+			{ __name__: metricName, __type__: 'gauge', run: runId, value: 7 },
+			{ __name__: metricName, __type__: 'gauge', run: runId, value: 8 },
+		],
+	});
+}
+
+async function seedEmptyTraceStream(): Promise<void> {
+	await request({
+		method: 'POST',
+		url: `${baseUrl}/api/${organizationId}/streams/${traceStream}`,
+		qs: { type: 'traces' },
+		body: { fields: [], settings: {} },
+	});
+}
+
 live('pinned OpenObserve v0.92.2 Batch 3 flow', () => {
 	it('searches logs, queries metrics, checks trace reads, and cleans exact streams', async () => {
 		guard();
@@ -194,11 +214,7 @@ live('pinned OpenObserve v0.92.2 Batch 3 flow', () => {
 				0,
 			);
 			expect(JSON.stringify(around[0].json)).toContain(runId);
-			const metricInput = [
-				{ json: { __name__: metricName, __type__: 'gauge', run: runId, value: 7 } },
-				{ json: { __name__: metricName, __type__: 'gauge', run: runId, value: 8 } },
-			];
-			await ingestManyMetrics(context({}, metricInput), metricInput);
+			await seedMetrics();
 			await waitFor(metricName, 'metrics');
 			await delay(200);
 			const common = { selectors: `{__name__="${metricName}"}`, startTime: start, endTime: end };
@@ -223,16 +239,7 @@ live('pinned OpenObserve v0.92.2 Batch 3 flow', () => {
 				const result = await executeMetric(context({ ...extra, rawResponse: true }), op, 0);
 				expect(result[0].json.status).toBe('success');
 			}
-			await executeStreamItem(
-				context({
-					streamType: 'traces',
-					streamName: traceStream,
-					fieldsJson: '[]',
-					settingsJson: '{}',
-				}),
-				'create',
-				0,
-			);
+			await seedEmptyTraceStream();
 			await waitFor(traceStream, 'traces');
 			await expect(
 				executeTrace(

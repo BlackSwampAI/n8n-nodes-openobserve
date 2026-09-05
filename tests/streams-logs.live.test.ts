@@ -30,7 +30,6 @@ const credentials = {
 	secret: 'OpenObserve-Local-Test-Only-9x!',
 };
 const inferredStream = `n8n_batch2_live_${runId}_inferred`;
-const createdStream = `n8n_batch2_live_${runId}_created`;
 const fakeNode: INode = {
 	id: 'batch-2-live',
 	name: 'OpenObserve Live',
@@ -103,7 +102,7 @@ function assertDisposableTarget(): void {
 }
 
 async function expectOwnedStreamsAbsent(): Promise<void> {
-	for (const name of [inferredStream, createdStream]) {
+	for (const name of [inferredStream]) {
 		let present = true;
 		for (let attempt = 0; attempt < 20 && present; attempt++) {
 			const listed = await getManyStreams(
@@ -129,10 +128,9 @@ async function waitForOwnedStream(name: string): Promise<INodeExecutionData> {
 }
 
 live('pinned OpenObserve v0.92.2 Stream and Log flow', () => {
-	it('ingests, inspects, creates, updates, deletes fields, and cleans up', async () => {
+	it('ingests, inspects, updates, deletes fields, and cleans up', async () => {
 		assertDisposableTarget();
 		await removeOwnedStream(inferredStream);
-		await removeOwnedStream(createdStream);
 		try {
 			const ingested = await ingestManyLogs(
 				context({ streamName: inferredStream }, [
@@ -156,24 +154,6 @@ live('pinned OpenObserve v0.92.2 Stream and Log flow', () => {
 			);
 			expect(JSON.stringify(schema.json)).toContain('batch2_message');
 
-			await executeStreamItem(
-				context({
-					streamType: 'logs',
-					streamName: createdStream,
-					fieldsJson: '[{"name":"batch2_defined","type":"Utf8"}]',
-					settingsJson: '{"data_retention":1}',
-				}),
-				'create',
-				0,
-			);
-			await waitForOwnedStream(createdStream);
-			const createdSchema = await executeStreamItem(
-				context({ streamType: 'logs', streamName: createdStream, keyword: '' }),
-				'getSchema',
-				0,
-			);
-			expect(JSON.stringify(createdSchema.json)).toContain('batch2_defined');
-			expect(createdSchema.json.settings).toMatchObject({ data_retention: 1 });
 			await executeStreamItem(
 				context({
 					streamType: 'logs',
@@ -202,7 +182,6 @@ live('pinned OpenObserve v0.92.2 Stream and Log flow', () => {
 			expect(JSON.stringify(updated.json)).not.toContain('batch2_disposable');
 		} finally {
 			await removeOwnedStream(inferredStream);
-			await removeOwnedStream(createdStream);
 			await expectOwnedStreamsAbsent();
 		}
 	});
