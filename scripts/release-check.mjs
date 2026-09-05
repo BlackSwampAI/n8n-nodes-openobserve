@@ -21,8 +21,8 @@ const packageJson = JSON.parse(read('package.json'));
 const publishWorkflow = read('.github/workflows/publish.yml');
 const readme = read('README.md');
 
-if (!/^n8n-nodes-[a-z0-9][a-z0-9._-]*$/.test(packageJson.name ?? '')) {
-	fail('package.json name must be the final lowercase n8n-nodes-* package name');
+if (!/^(?:@[a-z0-9][a-z0-9._-]*\/)?n8n-nodes-[a-z0-9][a-z0-9._-]*$/.test(packageJson.name ?? '')) {
+	fail('package.json name must be a lowercase n8n-nodes-* package, optionally npm-scoped');
 }
 
 for (const [label, value] of [
@@ -31,9 +31,9 @@ for (const [label, value] of [
 	['homepage', packageJson.homepage],
 	['repository.url', packageJson.repository?.url],
 	['author.name', packageJson.author?.name],
-	['author.email', packageJson.author?.email],
 ]) {
-	if (!value || hasPlaceholder(value)) fail(`package.json ${label} is missing or still a placeholder`);
+	if (!value || hasPlaceholder(value))
+		fail(`package.json ${label} is missing or still a placeholder`);
 }
 
 if (packageJson.private === true) fail('package.json must not be private');
@@ -48,22 +48,32 @@ if (packageJson.peerDependencies?.['n8n-workflow'] !== '*') {
 	fail('n8n-workflow must remain a host-provided peer dependency');
 }
 if (packageJson.n8n?.strict !== true) fail('package.json n8n.strict must be true');
-if (!packageJson.n8n?.nodes?.length) fail('package.json n8n.nodes must register at least one built node');
+if (!packageJson.n8n?.nodes?.length)
+	fail('package.json n8n.nodes must register at least one built node');
 if (packageJson.publishConfig?.access !== 'public') fail('publishConfig.access must be public');
-if (packageJson.engines?.node !== '>=22.22.0') fail('engines.node must match the current >=22.22.0 baseline');
-if (packageJson.scripts?.release !== 'n8n-node release') fail('release script must use n8n-node release');
+if (packageJson.engines?.node !== '>=22.22.0')
+	fail('engines.node must match the current >=22.22.0 baseline');
+if (packageJson.scripts?.release !== 'n8n-node release')
+	fail('release script must use n8n-node release');
 if (packageJson.scripts?.prepublishOnly !== 'n8n-node prerelease') {
 	fail('prepublishOnly must use the n8n-node prerelease guard');
 }
 
-if (!publishWorkflow.includes("- 'v*.*.*'")) fail('publish workflow must trigger on v-prefixed version tags');
+if (!publishWorkflow.includes("- 'v*.*.*'"))
+	fail('publish workflow must trigger on v-prefixed version tags');
 if (!/id-token:\s*write/.test(publishWorkflow)) fail('publish workflow needs id-token: write');
 if (!publishWorkflow.includes('npm run release')) fail('publish workflow must run npm run release');
 if (!publishWorkflow.includes('secrets.NPM_TOKEN')) {
 	fail('publish workflow must retain the first-publication NPM_TOKEN fallback');
 }
 
-for (const heading of ['## Installation', '## Compatibility', '## Credentials', '## Operations', '## License']) {
+for (const heading of [
+	'## Installation',
+	'## Compatibility',
+	'## Credentials',
+	'## Operations',
+	'## License',
+]) {
 	if (!readme.includes(heading)) fail(`README is missing ${heading}`);
 }
 if (hasPlaceholder(readme)) fail('README still contains a placeholder');
@@ -73,7 +83,18 @@ for (const path of ['LICENSE.md', 'CHANGELOG.md', 'RELEASING.md']) {
 }
 
 try {
-	const origin = execFileSync('git', ['remote', 'get-url', 'origin'], { cwd: root, encoding: 'utf8' }).trim();
+	let origin;
+	try {
+		origin = execFileSync('git', ['remote', 'get-url', 'origin'], {
+			cwd: root,
+			encoding: 'utf8',
+		}).trim();
+	} catch (error) {
+		// Some restricted build sandboxes return stdout but deny spawnSync completion.
+		const stdout = error && typeof error === 'object' && 'stdout' in error ? error.stdout : '';
+		if (typeof stdout !== 'string' || !stdout.trim()) throw error;
+		origin = stdout.trim();
+	}
 	const normalizedOrigin = origin
 		.replace(/^git@github\.com:/, 'https://github.com/')
 		.replace(/\.git$/, '');

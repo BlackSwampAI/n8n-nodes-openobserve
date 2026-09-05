@@ -1,0 +1,22 @@
+services:
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve:v0.92.2@sha256:88fb692ac791d3eaff69653a4a4686f1c7eceb9e105491d58d29ac2739560b3b
+    environment:
+      ZO_DATA_DIR: /data
+      ZO_ROOT_USER_EMAIL: root@example.test
+      ZO_ROOT_USER_PASSWORD: OpenObserve-Local-Test-Only-9x!
+      ZO_TELEMETRY: 'false'
+    ports:
+      - '127.0.0.1:5080:5080'
+    volumes:
+      - openobserve-test-data:/data
+    healthcheck:
+      test: ['CMD', 'curl', '--fail', '--silent', 'http://127.0.0.1:5080/healthz']
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 10s
+    restart: 'no'
+
+volumes:
+  openobserve-test-data:
