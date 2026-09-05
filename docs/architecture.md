@@ -15,7 +15,7 @@ tests/
   unit/ contract/ e2e/
 ```
 
-Batch 0 registered the shell, Batch 1 added credentials and the shared API foundation, and Batch 2 adds modular Stream and Log resources. Later batches add bounded resource groups and their tests; trigger registration remains gated.
+Batch 0 registered the shell; Batches 1–4 added credentials/shared transport and bounded Stream, Log, Search, Metric, Trace, Function, and Dashboard modules. Later batches add bounded resource groups and their tests; trigger registration remains gated.
 
 ## API and authentication boundary
 
@@ -47,6 +47,8 @@ This repository is an independent MIT-licensed API integration and is not affili
 6. **Destructive and side-effecting operations are explicit.** Stream deletion, field deletion, manual alert triggering, and trigger artifact cleanup require clear labels and tests.
 7. **Edition-aware, capability-tested behavior.** A route in Cloud Swagger is not evidence that it works in OSS. Enterprise-aware features are deferred unless clearly gated.
 8. **No release claims during discovery.** The shell exists only to keep the package scaffold buildable; README and changelog state that it is not yet functional or released.
+9. **Dashboard updates preserve server state.** The node fetches the current versioned definition and conflict hash, then merges advanced JSON followed by explicitly selected friendly update fields. Omitted title and description remain unchanged; advanced JSON is the explicit escape hatch for broader changes. Dashboard selectors are scoped to the selected folder. Panel CRUD remains deferred because its tab/panel schema and conflict semantics warrant a separate UX design.
+10. **Functions are VRL-only.** Create, Update, and Validate always send transformation type `0`, after advanced JSON is merged, so the node cannot silently switch to another transformation language.
 
 ## Batch boundaries
 
@@ -54,6 +56,7 @@ This repository is an independent MIT-licensed API integration and is not affili
 - Batch 1: credential design, transport/error/date/JSON helpers, health/auth contract tests.
 - Batch 2: six Stream operations and ordinary JSON Log Ingest/Ingest Many, including pinned OSS coverage.
 - Batch 3: SQL Search, ordinary JSON metrics plus Prometheus-compatible reads, and OSS-safe Trace Latest/DAG reads. Enterprise-only Service Graph is deferred.
+- Batch 4: Function lifecycle/VRL validation and version-preserving Dashboard lifecycle. Panel CRUD remains deferred.
 - Later action batches: implement only matrix operations with focused unit + OSS/Cloud contract tests.
 - Trigger batch: only after the documented feasibility and safety gate.
 - Release batch: UX audit, compatibility declaration, package install test, first-publication bootstrap, provenance verification.
