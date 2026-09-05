@@ -35,6 +35,7 @@ Service accounts are preferred for self-hosted production automation. OpenObserv
 - Alert Template: Create, Get, Get Many, Get Prebuilt, Update, and Delete.
 - Alert Destination: webhook Create, Get, Get Many, Update, and Delete, with returned header values redacted.
 - Alert: scheduled/real-time Create, Get, Get Many, Update, Delete, Enable/Disable, Trigger Manually, Clone, Get History, and JSON Export.
+- OpenObserve Trigger: Alert Triggered for explicitly selected alerts, with secret-authenticated webhook delivery and owned lifecycle artifacts.
 
 Ingestion can infer and create log or metric streams. Function lifecycle and VRL validation plus version-preserving Dashboard lifecycle operations are also implemented. Destructive operations and manual alert triggering require confirmation. Other proposed v0.1 resources remain documented but unimplemented in [docs/api-matrix.md](docs/api-matrix.md); panel CRUD remains deferred.
 
@@ -55,7 +56,7 @@ The local OpenObserve harness and smoke procedure are documented in [docs/testin
 
 ## Release status
 
-No package has been published. See [RELEASING.md](RELEASING.md) for the future GitHub Actions bootstrap and Trusted Publisher transition. Publishing, tagging, pushing, and release creation remain outside Batch 5.
+No package has been published. See [RELEASING.md](RELEASING.md) for the future GitHub Actions bootstrap and Trusted Publisher transition. Publishing, tagging, pushing, and release creation remain outside Batch 6.
 
 ## License
 

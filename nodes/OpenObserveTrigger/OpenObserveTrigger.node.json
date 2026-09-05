@@ -1,0 +1,9 @@
+{
+	"node": "@blackswampai/n8n-nodes-openobserve.openObserveTrigger",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Data & Storage"],
+	"resources": {
+		"primaryDocumentation": [{ "url": "https://github.com/BlackSwampAI/n8n-nodes-openobserve" }]
+	}
+}

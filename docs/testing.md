@@ -23,12 +23,17 @@ These values are fixtures, not production secrets. The port binds to loopback. T
 - `tests/functions-dashboards.live.test.ts`: opt-in exact-owned Function and Dashboard lifecycle in the disposable local `default` organization. It validates good/bad VRL and cleans only the exact run-scoped function and dashboard IDs in `finally`; no folders or panels are created or deleted.
 - `tests/alert-infrastructure.test.ts`: mocked coverage for every Alert Template, Alert Destination, and Alert operation, current/mixed API routing, selectors, pagination, validation, response redaction, and lineage.
 - `tests/alert-infrastructure.live.test.ts`: opt-in exact-owned real-time alert-to-webhook lifecycle. It refuses non-loopback API targets, non-`default` organizations, and receiver addresses outside the Docker private range. Determine the Compose bridge gateway and pass it as `OPENOBSERVE_LIVE_RECEIVER_HOST`; the fixture creates and removes only its exact stream/template/destination/alert/clone.
+- `tests/openobserve-trigger.test.ts`: deterministic ownership, secret validation (including duplicate raw headers), selected-alert union, restart idempotence, collision refusal, reverse rollback, preservation, and exact deactivation tests.
+- `tests/openobserve-trigger.live.test.ts`: opt-in pinned-OSS proof of selected-alert attachment, repeated activation, real secret-authenticated delivery through the trigger webhook method, exact detachment, preservation of the alert's unrelated destination/configuration, and dependency-ordered cleanup. It uses the same loopback/default/private-bridge guards as the Batch 5 receiver fixture.
+
+The built trigger must receive an actual n8n editor/activation smoke before release: confirm credential, event, folder, and alert controls; activate twice; send rejected and accepted webhook requests; restart n8n; and deactivate. Batch 6's repository environment contains `@n8n/node-cli` but no installed `n8n` runtime, so that UI/runtime smoke cannot be claimed without a separately approved pinned n8n harness. Build and package registration tests remain the local boundary proof.
 
 After starting Compose, read its current bridge gateway and pass that exact value to the Batch 5 fixture:
 
 ```bash
 OPENOBSERVE_LIVE_RECEIVER_HOST="$(docker network inspect n8n-nodes-openobserve_default --format '{{(index .IPAM.Config 0).Gateway}}')"
 OPENOBSERVE_LIVE=1 OPENOBSERVE_LIVE_RECEIVER_HOST="$OPENOBSERVE_LIVE_RECEIVER_HOST" npm test -- --run tests/alert-infrastructure.live.test.ts
+OPENOBSERVE_LIVE=1 OPENOBSERVE_LIVE_RECEIVER_HOST="$OPENOBSERVE_LIVE_RECEIVER_HOST" npm test -- --run tests/openobserve-trigger.live.test.ts
 ```
 
 - `tests/search-metrics-traces.live.test.ts`: guarded loopback-only Search/Metric flow, including JSON rows plus CSV and Markdown query output, and honest empty/missing Trace behavior. It creates three exact run-scoped streams, deletes each with `delete_all=false`, and confirms absence in `finally`; it never seeds traces through an out-of-scope ingestion route.

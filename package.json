@@ -47,7 +47,8 @@
 			"dist/credentials/OpenObserveApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/OpenObserve/OpenObserve.node.js"
+			"dist/nodes/OpenObserve/OpenObserve.node.js",
+			"dist/nodes/OpenObserveTrigger/OpenObserveTrigger.node.js"
 		]
 	},
 	"devDependencies": {

@@ -10,6 +10,10 @@ Batch 4 verification against pinned OSS v0.92.2 confirmed Function create/list/d
 
 Batch 5 verified the current Alert Template and Destination arrays, v2 Alert `{list}` pagination, real-time alert delivery, enable/disable, clone, manual trigger, and JSON export against pinned OSS v0.92.2. Destination GET returned webhook headers in clear text, so the node redacts every returned header value. Export returned a JSON Alert object, not binary content. The unversioned history route exists in both generated contracts but returned an empty HTTP 404 after successful automatic and manual triggers on v0.92.2; the operation remains implemented from the current contract with that pinned-version discrepancy documented. Private webhook URLs are correctly rejected by default SSRF protection; only the disposable Compose fixture sets the documented `ZO_SKIP_SSRF_CHECKS=true` test override.
 
+Batch 6 uses only those public template, destination, folder, and v2 alert contracts. The trigger is selected-alert-only and authenticates OpenObserve delivery with a non-URL secret header; it does not add a new OpenObserve event API.
+
+Pinned OSS v0.92.2 returns `alert_id` (rather than `id`) in v2 alert-list rows, while item responses use `id`. Trigger cleanup accepts both documented/current and pinned list identifiers, then GETs every candidate before deciding whether an owned destination is unreferenced.
+
 Alert folders use the current v2 `/folders/alerts` contract. Template create uses pinned OSS's custom `isPrebuilt: false` marker. Pinned OSS may mark an ordinary selected template `isDefault: true`; that flag is preserved rather than treated as system ownership. Update preserves fetched `isPrebuilt`/`isDefault` classification and, when present in the current Cloud contract, sticky `kind`; advanced JSON cannot convert a user template into a prebuilt template. Pinned v0.92.2 does not expose `kind` in its generated Template schema.
 
 Status legend: **OAS** means confirmed in the generated contract; **Docs** means also described by current human documentation; **Live** means behavior must still be verified against both the pinned OSS image and Cloud. `{org}` is the organization identifier. Stream type is a query parameter where the contract defines it (`logs`, `metrics`, or `traces`).
@@ -70,7 +74,7 @@ The [official comparison](https://openobserve.ai/downloads/) says logs, metrics,
 
 ## Trigger feasibility gate
 
-“Alert Triggered” has no inbound-subscription endpoint in the OAS. The feasible design is an n8n webhook plus an OpenObserve alert template/destination referencing it. Before implementation, live tests must prove the exact outbound payload, supported secret header, retries, selected-alert attachment, and safe lifecycle behavior. Automation may delete/update only artifacts it created and marked with a stable ownership identifier; otherwise the node must show setup instructions and require the user to attach a reusable destination manually.
+“Alert Triggered” has no inbound-subscription endpoint in the OAS. Pinned OSS v0.92.2 live validation proved the implemented n8n webhook plus owned OpenObserve template/destination design: repeated activation does not duplicate the attachment, an existing destination and alert configuration survive full-definition PUTs, the custom secret header reaches the webhook, and deactivation removes only the trigger destination before dependency-ordered artifact cleanup. Cleanup uses bounded confirmation polling and cross-folder GET verification; ambiguity retains the artifacts and ownership state rather than guessing.
 
 ## Research provenance and refresh
 
