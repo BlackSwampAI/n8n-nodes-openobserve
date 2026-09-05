@@ -20,6 +20,7 @@ export class OpenObserve implements INodeType {
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
 		usableAsTool: true,
+		credentials: [{ name: 'openObserveApi', required: true }],
 		properties: [
 			{
 				displayName: 'This development scaffold does not contain OpenObserve operations yet',

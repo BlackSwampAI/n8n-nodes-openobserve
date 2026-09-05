@@ -11,7 +11,7 @@ services:
     volumes:
       - openobserve-test-data:/data
     healthcheck:
-      test: ['CMD', 'curl', '--fail', '--silent', 'http://127.0.0.1:5080/healthz']
+      test: ['CMD', '/openobserve', 'node', 'list']
       interval: 5s
       timeout: 3s
       retries: 24

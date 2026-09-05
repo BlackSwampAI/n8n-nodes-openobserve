@@ -1,9 +1,11 @@
 # n8n nodes for OpenObserve
 
-Independent n8n community integration for self-hosted [OpenObserve](https://openobserve.ai/) and OpenObserve Cloud, maintained by Black Swamp AI.
+Independent Black Swamp AI n8n community integration for self-hosted [OpenObserve](https://openobserve.ai/) and OpenObserve Cloud.
+
+This project is not affiliated with, endorsed by, sponsored by, or maintained by OpenObserve. The OpenObserve name and logo belong to their respective owner(s) and are used only to identify compatibility.
 
 > [!WARNING]
-> This repository is in discovery/scaffold development. The current code contains no OpenObserve credentials or operations and has not been published. Do not install it for production use.
+> This repository is in API-foundation development. The current code contains credentials and shared internal helpers but no OpenObserve business operations, and it has not been published. Do not install it for production use.
 
 ## Installation
 
@@ -15,11 +17,17 @@ The development baseline is Node.js 22.22 or newer and the host-provided `n8n-wo
 
 ## Credentials
 
-Credentials are intentionally deferred to Batch 1. The design will support a configurable self-hosted or Cloud base URL, organization, and an authentication method verified against both environments. Never put production credentials in `docker-compose.yml` or committed fixtures.
+Configure the OpenObserve API credential with:
+
+- **Base URL**: Cloud or self-hosted API origin, including an optional reverse-proxy path.
+- **Organization ID**: the configured OpenObserve organization.
+- **Email / Account Identifier** and **Secret**: HTTP Basic credentials. The secret can be a user password or a self-hosted service-account token.
+
+Service accounts are preferred for self-hosted production automation. OpenObserve Cloud currently requires user credentials because service accounts are not supported there. Never put production credentials in `docker-compose.yml` or committed fixtures.
 
 ## Operations
 
-No operations are implemented in Batch 0. The proposed v0.1 resources and current API routes are frozen for review in [docs/api-matrix.md](docs/api-matrix.md). This README will list only implemented operations once they exist.
+No business operations are implemented in Batch 1. The current package provides only the credential and shared API foundation; the proposed v0.1 resources and current API routes are frozen for review in [docs/api-matrix.md](docs/api-matrix.md). This README will list only implemented operations once they exist.
 
 ## Development
 
@@ -38,8 +46,8 @@ The local OpenObserve harness and smoke procedure are documented in [docs/testin
 
 ## Release status
 
-No package has been published. See [RELEASING.md](RELEASING.md) for the future GitHub Actions bootstrap and Trusted Publisher transition. Publishing, tagging, pushing, and release creation are outside the discovery batch.
+No package has been published. See [RELEASING.md](RELEASING.md) for the future GitHub Actions bootstrap and Trusted Publisher transition. Publishing, tagging, pushing, and release creation are outside the current API-foundation batch.
 
 ## License
 
-This independent integration is available under the [MIT License](LICENSE.md). OpenObserve is a separate project with its own licensing. This project is not affiliated with or endorsed by OpenObserve.
+This independent integration is available under the [MIT License](LICENSE.md). OpenObserve is a separate project with its own licensing.
