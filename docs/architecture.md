@@ -53,6 +53,7 @@ This repository is an independent MIT-licensed API integration and is not affili
 - Batch 0: research, identity, inert scaffold, CI, local OSS harness.
 - Batch 1: credential design, transport/error/date/JSON helpers, health/auth contract tests.
 - Batch 2: six Stream operations and ordinary JSON Log Ingest/Ingest Many, including pinned OSS coverage.
+- Batch 3: SQL Search, ordinary JSON metrics plus Prometheus-compatible reads, and OSS-safe Trace Latest/DAG reads. Enterprise-only Service Graph is deferred.
 - Later action batches: implement only matrix operations with focused unit + OSS/Cloud contract tests.
 - Trigger batch: only after the documented feasibility and safety gate.
 - Release batch: UX audit, compatibility declaration, package install test, first-publication bootstrap, provenance verification.
