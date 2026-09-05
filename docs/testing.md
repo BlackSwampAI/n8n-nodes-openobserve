@@ -14,11 +14,14 @@ These values are fixtures, not production secrets. The port binds to loopback. T
 
 ## Suites and fixtures
 
-- `tests/scaffold.test.mjs`: Batch 0 identity/packaging invariants; no server needed.
-- `tests/unit/`: operation parameters, JSON/date conversion, URL encoding, errors, and pagination; starts in Batch 1.
+- `tests/scaffold.test.ts`: identity and packaging invariants; no server needed.
+- `tests/foundation.test.ts`: credential, transport, JSON/date conversion, URL encoding, error, pagination, and local-harness invariants; no server needed.
+- Future `tests/unit/` suites: operation parameters and resource-specific behavior, added with their implementation batch.
 - `tests/contract/oss/`: one suite against the pinned container, independently runnable.
 - `tests/contract/cloud/`: the same safe reads plus isolated writes against a designated non-production Cloud org; credentials come only from CI secrets.
 - `tests/e2e/`: n8n workflow execution and trigger lifecycle, added with the corresponding features.
+
+All automated tests are TypeScript `*.test.ts` files run by Vitest. Direct-execution `.mjs` files are reserved for operational and release tooling rather than test suites.
 
 Fixtures use unique, deterministic prefixes plus a run ID. Tests create only owned resources and clean them in reverse dependency order. Golden payloads must be small, hand-authored, scrubbed, and tied to the pinned version; never copy the full generated API client/spec.
 

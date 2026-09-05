@@ -1,8 +1,12 @@
+// Vitest runs the suite; Node's strict assertions retain the existing metadata checks.
+// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports
 import assert from 'node:assert/strict';
+// Repository-level tests intentionally inspect local fixture and metadata files.
+// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports
 import { access, readFile } from 'node:fs/promises';
-import test from 'node:test';
+import { test } from 'vitest';
 
-const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url)));
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const nodeSource = await readFile(
 	new URL('../nodes/OpenObserve/OpenObserve.node.ts', import.meta.url),
 	'utf8',

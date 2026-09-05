@@ -29,8 +29,9 @@
 		"format:check": "prettier --check .",
 		"lint": "n8n-node lint",
 		"lint:fix": "n8n-node lint --fix",
-		"typecheck": "tsc --noEmit",
-		"test": "npm run build --silent && node --test tests/**/*.test.mjs",
+		"typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+		"test": "vitest run",
+		"test:unit": "vitest run",
 		"release:check": "node scripts/release-check.mjs",
 		"package:check": "npm run release:check && npm pack --dry-run --cache /tmp/n8n-nodes-openobserve-npm-cache",
 		"release": "n8n-node release",
@@ -54,7 +55,11 @@
 		"eslint": "9.32.0",
 		"prettier": "3.6.2",
 		"release-it": "20.2.0",
-		"typescript": "5.9.2"
+		"typescript": "5.9.2",
+		"vitest": "4.1.11"
+	},
+	"allowScripts": {
+		"eslint-plugin-n8n-nodes-base": false
 	},
 	"peerDependencies": {
 		"n8n-workflow": "*"

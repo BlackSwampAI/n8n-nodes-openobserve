@@ -1,34 +1,34 @@
-import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+// Repository-level tests intentionally inspect local fixture and metadata files.
+// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports
 import { readFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
-import test from 'node:test';
+// Vitest runs the suite; Node's strict assertions retain the existing predicate-based checks.
+// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports
+import assert from 'node:assert/strict';
+import type { IHttpRequestOptions } from 'n8n-workflow';
+import { test } from 'vitest';
 
-const require = createRequire(import.meta.url);
-const { OpenObserveApi } = require('../dist/credentials/OpenObserveApi.credentials.js');
-const {
-	normalizeOpenObserveError,
-	redactSensitive,
-} = require('../dist/nodes/OpenObserve/shared/errors.js');
-const { collectPaginated } = require('../dist/nodes/OpenObserve/shared/pagination.js');
-const { appendQuery, serializeQuery } = require('../dist/nodes/OpenObserve/shared/query.js');
-const { toOpenObserveMicroseconds } = require('../dist/nodes/OpenObserve/shared/time.js');
-const { openObserveApiRequest } = require('../dist/nodes/OpenObserve/shared/transport.js');
-const {
+import { OpenObserveApi } from '../credentials/OpenObserveApi.credentials';
+import { normalizeOpenObserveError, redactSensitive } from '../nodes/OpenObserve/shared/errors';
+import { collectPaginated } from '../nodes/OpenObserve/shared/pagination';
+import { appendQuery, serializeQuery } from '../nodes/OpenObserve/shared/query';
+import { toOpenObserveMicroseconds } from '../nodes/OpenObserve/shared/time';
+import { openObserveApiRequest } from '../nodes/OpenObserve/shared/transport';
+import {
 	buildApiPath,
 	buildApiV2Path,
 	buildApiV2Url,
 	buildApiUrl,
 	encodePathSegment,
 	normalizeBaseUrl,
-} = require('../dist/nodes/OpenObserve/shared/url.js');
+} from '../nodes/OpenObserve/shared/url';
 
 const fakeNode = {
 	id: 'test-node',
 	name: 'OpenObserve',
 	type: '@blackswampai/n8n-nodes-openobserve.openObserve',
 	typeVersion: 1,
-	position: [0, 0],
+	position: [0, 0] as [number, number],
 	parameters: {},
 };
 
@@ -84,7 +84,13 @@ test('constructs explicit v2 paths without changing the unversioned default', ()
 
 test('applies Basic authentication and rewrites the harmless credential test path', async () => {
 	const credential = new OpenObserveApi();
-	const request = await credential.authenticate(
+	const authenticate = credential.authenticate as unknown as (...args: unknown[]) => Promise<{
+		baseURL?: string;
+		url?: string;
+		auth?: { username: string; password: string; sendImmediately: boolean };
+		headers?: unknown;
+	}>;
+	const request = await authenticate(
 		{
 			baseUrl: 'https://example.test/proxy///',
 			organizationId: 'team/a',
@@ -128,7 +134,13 @@ test('redacts credentials, authorization, URL secrets, and email addresses', () 
 });
 
 test('redaction tolerates circular and BigInt payloads and covers token key variants', () => {
-	const circular = {
+	const circular: {
+		api_key: string;
+		access_token: string;
+		count: bigint;
+		url: string;
+		self?: unknown;
+	} = {
 		api_key: 'api-key-value',
 		access_token: 'access-token-value',
 		count: 10n,
@@ -149,15 +161,15 @@ test('maps HTTP and connection failures to safe n8n errors', () => {
 		[401, 'authentication failed'],
 		[403, 'denied access'],
 		[404, 'not found'],
-	]) {
+	] as Array<[number, string]>) {
 		const error = normalizeOpenObserveError(
 			fakeNode,
 			{ statusCode: status, message: `failure for service@example.test using token-value` },
 			{ secrets: ['service@example.test', 'token-value'] },
 		);
-		assert.equal(error.httpCode, String(status));
+		assert.equal('httpCode' in error ? error.httpCode : undefined, String(status));
 		assert.match(error.message, new RegExp(expected, 'i'));
-		assert.equal(error.description.includes('token-value'), false);
+		assert.equal(String(error.description).includes('token-value'), false);
 	}
 
 	const connection = normalizeOpenObserveError(
@@ -168,7 +180,7 @@ test('maps HTTP and connection failures to safe n8n errors', () => {
 		},
 	);
 	assert.match(connection.message, /Unable to connect to OpenObserve/);
-	assert.equal(connection.description.includes('token-value'), false);
+	assert.equal(String(connection.description).includes('token-value'), false);
 });
 
 test('converts ISO, Date, and numeric values to safe microseconds', () => {
@@ -199,7 +211,7 @@ test('serializes repeated Prometheus parameters safely', () => {
 });
 
 test('Return All traverses pages without a finite limit and stops on empty pages', async () => {
-	const calls = [];
+	const calls: Array<[number, number | undefined]> = [];
 	const all = await collectPaginated({
 		returnAll: true,
 		initialCursor: 0,
@@ -246,12 +258,12 @@ test('limited mode truncates one page and validates limit only in limited mode',
 			limit: 0,
 			initialCursor: 0,
 			fetchPage: async () => ({ items: [] }),
-		}),
+		} as never),
 	);
 });
 
 test('limited mode spans capped pages, passes decreasing remaining, and stops exactly', async () => {
-	const calls = [];
+	const calls: Array<[number, number | undefined]> = [];
 	const result = await collectPaginated({
 		returnAll: false,
 		limit: 5,
@@ -270,7 +282,7 @@ test('limited mode spans capped pages, passes decreasing remaining, and stops ex
 });
 
 test('limited mode returns early when the endpoint is exhausted', async () => {
-	const calls = [];
+	const calls: Array<[string, number | undefined]> = [];
 	const result = await collectPaginated({
 		returnAll: false,
 		limit: 5,
@@ -317,9 +329,13 @@ test('pagination detects primitive and logical object cursor loops and enforces 
 });
 
 test('transport builds authenticated unversioned and v2 requests without retries', async () => {
-	const requests = [];
+	const requests: Array<{
+		credentialType: string;
+		request: IHttpRequestOptions;
+		context: unknown;
+	}> = [];
 	const context = {
-		getCredentials: async (name) => {
+		getCredentials: async (name: string) => {
 			assert.equal(name, 'openObserveApi');
 			return {
 				baseUrl: 'https://example.test/proxy///',
@@ -330,18 +346,22 @@ test('transport builds authenticated unversioned and v2 requests without retries
 		},
 		getNode: () => fakeNode,
 		helpers: {
-			httpRequestWithAuthentication: async function (credentialType, request) {
+			httpRequestWithAuthentication: async function (
+				this: unknown,
+				credentialType: string,
+				request: IHttpRequestOptions,
+			) {
 				requests.push({ credentialType, request, context: this });
 				return { ok: true };
 			},
 		},
 	};
 
-	await openObserveApiRequest.call(context, {
+	await openObserveApiRequest.call(context as never, {
 		pathSegments: ['streams'],
 		query: { match: ['up', 'down'] },
 	});
-	await openObserveApiRequest.call(context, {
+	await openObserveApiRequest.call(context as never, {
 		apiPathMode: 'v2',
 		method: 'POST',
 		pathSegments: ['alerts', 'alert.one'],
@@ -354,7 +374,7 @@ test('transport builds authenticated unversioned and v2 requests without retries
 	assert.equal(requests.length, 2);
 	assert.equal(requests[0].credentialType, 'openObserveApi');
 	assert.equal(requests[0].request.url, 'https://example.test/proxy/api/team%2Fa/streams');
-	assert.deepEqual(requests[0].request.qs.match, ['up', 'down']);
+	assert.deepEqual(requests[0].request.qs?.match, ['up', 'down']);
 	assert.equal(requests[0].request.arrayFormat, 'repeat');
 	assert.equal(requests[0].request.json, true);
 	assert.equal(
@@ -366,8 +386,9 @@ test('transport builds authenticated unversioned and v2 requests without retries
 		Accept: 'application/octet-stream',
 		'X-Request-Mode': 'explicit',
 	});
-	assert.equal(Buffer.isBuffer(requests[1].request.body), true);
-	assert.equal(requests[1].request.body.toString(), 'binary');
+	const binaryBody = requests[1].request.body;
+	assert.ok(Buffer.isBuffer(binaryBody));
+	assert.equal(binaryBody.toString(), 'binary');
 	assert.equal(requests[1].request.encoding, 'arraybuffer');
 	assert.equal(requests[1].request.json, false);
 	assert.equal(requests[1].request.returnFullResponse, true);
@@ -396,11 +417,17 @@ test('transport normalizes errors with item context and makes no retry attempt',
 	};
 
 	await assert.rejects(
-		openObserveApiRequest.call(context, { pathSegments: ['streams'], itemIndex: 4 }),
-		(error) => {
-			assert.equal(error.httpCode, '401');
-			assert.equal(error.context.itemIndex, 4);
-			const rendered = `${error.message} ${error.description}`;
+		openObserveApiRequest.call(context as never, { pathSegments: ['streams'], itemIndex: 4 }),
+		(error: unknown) => {
+			const caught = error as {
+				httpCode: string;
+				context: { itemIndex: number };
+				message: string;
+				description: string;
+			};
+			assert.equal(caught.httpCode, '401');
+			assert.equal(caught.context.itemIndex, 4);
+			const rendered = `${caught.message} ${caught.description}`;
 			for (const secret of [
 				'service@example.test',
 				'token-value',
@@ -455,15 +482,20 @@ test('transport preserves actionable local validation errors with item context',
 		};
 
 		await assert.rejects(
-			openObserveApiRequest.call(context, {
+			openObserveApiRequest.call(context as never, {
 				pathSegments: testCase.pathSegments,
 				itemIndex: 7,
 			}),
-			(error) => {
-				assert.match(error.message, testCase.expected);
-				assert.doesNotMatch(error.message, /Unable to connect/);
-				assert.equal(error.context.itemIndex, 7);
-				assert.doesNotMatch(`${error.message} ${error.description ?? ''}`, /token-value/);
+			(error: unknown) => {
+				const caught = error as {
+					message: string;
+					description?: string;
+					context: { itemIndex: number };
+				};
+				assert.match(caught.message, testCase.expected);
+				assert.doesNotMatch(caught.message, /Unable to connect/);
+				assert.equal(caught.context.itemIndex, 7);
+				assert.doesNotMatch(`${caught.message} ${caught.description ?? ''}`, /token-value/);
 				return true;
 			},
 		);
@@ -473,7 +505,9 @@ test('transport preserves actionable local validation errors with item context',
 });
 
 test('registers credentials and documents official icon provenance and independence', async () => {
-	const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url)));
+	const packageJson = JSON.parse(
+		await readFile(new URL('../package.json', import.meta.url), 'utf8'),
+	);
 	assert.deepEqual(packageJson.n8n.credentials, ['dist/credentials/OpenObserveApi.credentials.js']);
 	const [light, dark, provenance, readme] = await Promise.all([
 		readFile(new URL('../nodes/OpenObserve/openobserve.svg', import.meta.url), 'utf8'),
@@ -496,7 +530,7 @@ test('registers credentials and documents official icon provenance and independe
 
 test('compose healthcheck uses the distroless-compatible native OpenObserve probe', async () => {
 	const compose = await readFile(new URL('../docker-compose.yml', import.meta.url), 'utf8');
-	const healthcheck = compose.match(/healthcheck:\n([\s\S]*?)\n    restart:/)?.[1];
+	const healthcheck = compose.match(/healthcheck:\n([\s\S]*?)\n[ ]{4}restart:/)?.[1];
 	assert.ok(healthcheck);
 	assert.match(healthcheck, /test: \['CMD', '\/openobserve', 'node', 'list'\]/);
 	assert.doesNotMatch(healthcheck, /curl|CMD-SHELL|\bsh\b/);
