@@ -19,6 +19,7 @@ function hasPlaceholder(value) {
 
 const packageJson = JSON.parse(read('package.json'));
 const publishWorkflow = read('.github/workflows/publish.yml');
+const ciWorkflow = read('.github/workflows/ci.yml');
 const readme = read('README.md');
 
 if (!/^(?:@[a-z0-9][a-z0-9._-]*\/)?n8n-nodes-[a-z0-9][a-z0-9._-]*$/.test(packageJson.name ?? '')) {
@@ -59,12 +60,36 @@ if (packageJson.scripts?.prepublishOnly !== 'n8n-node prerelease') {
 	fail('prepublishOnly must use the n8n-node prerelease guard');
 }
 
+if (process.env.GITHUB_REF_TYPE === 'tag') {
+	const expectedTag = `v${packageJson.version}`;
+	if (process.env.GITHUB_REF_NAME !== expectedTag) {
+		fail(`release tag must exactly match package version (${expectedTag})`);
+	}
+}
+
 if (!publishWorkflow.includes("- 'v*.*.*'"))
 	fail('publish workflow must trigger on v-prefixed version tags');
 if (!/id-token:\s*write/.test(publishWorkflow)) fail('publish workflow needs id-token: write');
 if (!publishWorkflow.includes('npm run release')) fail('publish workflow must run npm run release');
 if (!publishWorkflow.includes('secrets.NPM_TOKEN')) {
 	fail('publish workflow must retain the first-publication NPM_TOKEN fallback');
+}
+for (const command of [
+	'npm ci',
+	'npm run format:check',
+	'npm run lint',
+	'npm run typecheck',
+	'npm test',
+	'npm run build',
+	'npm run package:check',
+]) {
+	if (!publishWorkflow.includes(command)) fail(`publish workflow must run ${command}`);
+}
+if (!/contents:\s*read/.test(publishWorkflow) || !/contents:\s*read/.test(ciWorkflow)) {
+	fail('CI and publish workflows must use contents: read');
+}
+if (!publishWorkflow.includes("node-version: '24'")) {
+	fail('publish workflow must use Node.js 24');
 }
 
 for (const heading of [

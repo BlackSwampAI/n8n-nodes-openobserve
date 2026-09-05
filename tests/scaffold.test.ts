@@ -5,12 +5,18 @@ import assert from 'node:assert/strict';
 // eslint-disable-next-line @n8n/community-nodes/no-restricted-imports
 import { access, readFile } from 'node:fs/promises';
 import { test } from 'vitest';
+import { OpenObserve } from '../nodes/OpenObserve/OpenObserve.node';
 
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const nodeSource = await readFile(
 	new URL('../nodes/OpenObserve/OpenObserve.node.ts', import.meta.url),
 	'utf8',
 );
+const publishWorkflow = await readFile(
+	new URL('../.github/workflows/publish.yml', import.meta.url),
+	'utf8',
+);
+const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
 
 test('package identity and runtime boundary are frozen', () => {
 	assert.equal(packageJson.name, '@blackswampai/n8n-nodes-openobserve');
@@ -44,4 +50,91 @@ test('node metadata keeps the shell visible and tool-compatible', async () => {
 		access(new URL('../nodes/OpenObserve/openobserve.svg', import.meta.url)),
 		access(new URL('../nodes/OpenObserve/openobserve.dark.svg', import.meta.url)),
 	]);
+});
+
+test('release workflows are least-privilege and run complete frozen gates', () => {
+	assert.match(ciWorkflow, /permissions:\s*\n\s+contents: read/);
+	assert.match(publishWorkflow, /id-token: write/);
+	assert.match(publishWorkflow, /contents: read/);
+	assert.match(publishWorkflow, /node-version: '24'/);
+	for (const command of [
+		'npm ci',
+		'npm run release:check',
+		'npm run format:check',
+		'npm run lint',
+		'npm run typecheck',
+		'npm test',
+		'npm run build',
+		'npm run package:check',
+		'npm run release',
+	])
+		assert.match(publishWorkflow, new RegExp(command.split(' ').join('\\s+')));
+});
+
+function optionValues(options: readonly unknown[] | undefined): unknown[] {
+	return (options ?? []).flatMap((option) =>
+		typeof option === 'object' && option !== null && 'value' in option
+			? [(option as { value: unknown }).value]
+			: [],
+	);
+}
+
+test('the advertised v0.1 resource and operation matrix is complete', () => {
+	const description = new OpenObserve().description;
+	const resources = description.properties.find((property) => property.name === 'resource');
+	assert.deepEqual(optionValues(resources?.options), [
+		'alert',
+		'alertDestination',
+		'alertTemplate',
+		'dashboard',
+		'function',
+		'log',
+		'metric',
+		'pipeline',
+		'search',
+		'stream',
+		'trace',
+	]);
+	const expected: Record<string, string[]> = {
+		alert: [
+			'clone',
+			'create',
+			'delete',
+			'disable',
+			'enable',
+			'export',
+			'get',
+			'getHistory',
+			'getMany',
+			'trigger',
+			'update',
+		],
+		alertDestination: ['create', 'delete', 'get', 'getMany', 'update'],
+		alertTemplate: ['create', 'delete', 'get', 'getMany', 'getPrebuilt', 'update'],
+		dashboard: ['create', 'delete', 'get', 'getMany', 'update'],
+		function: ['create', 'delete', 'getDependencies', 'getMany', 'update', 'validate'],
+		log: ['ingest', 'ingestMany'],
+		metric: [
+			'findSeries',
+			'getLabelValues',
+			'getLabels',
+			'getMetadata',
+			'ingest',
+			'ingestMany',
+			'instantQuery',
+			'rangeQuery',
+		],
+		pipeline: ['create', 'delete', 'disable', 'enable', 'get', 'getHistory', 'getMany', 'update'],
+		search: ['getFieldValues', 'query', 'searchAround'],
+		stream: ['create', 'delete', 'deleteFields', 'getMany', 'getSchema', 'updateSettings'],
+		trace: ['getDag', 'getLatest'],
+	};
+	for (const [resource, operations] of Object.entries(expected)) {
+		const property = description.properties.find(
+			(candidate) =>
+				candidate.name === 'operation' &&
+				candidate.displayOptions?.show?.resource?.includes(resource),
+		);
+		assert.deepEqual(optionValues(property?.options), operations, resource);
+	}
 });
