@@ -33,7 +33,7 @@ Service accounts are preferred for self-hosted production automation. OpenObserv
 - Metric: ordinary JSON Ingest/Ingest Many plus PromQL instant/range queries, metadata, labels, label values, and series discovery.
 - Trace: read-only Get Latest and Get DAG. Enterprise-only Service Graph is not exposed.
 
-Ingestion can infer and create log or metric streams. Destructive operations require confirmation. Other proposed v0.1 resources remain documented but unimplemented in [docs/api-matrix.md](docs/api-matrix.md).
+Ingestion can infer and create log or metric streams. Function lifecycle and VRL validation, plus version-preserving Dashboard lifecycle operations, are also implemented. Destructive operations require confirmation. Other proposed v0.1 resources remain documented but unimplemented in [docs/api-matrix.md](docs/api-matrix.md); panel CRUD remains deferred.
 
 ## Development
 
@@ -52,7 +52,7 @@ The local OpenObserve harness and smoke procedure are documented in [docs/testin
 
 ## Release status
 
-No package has been published. See [RELEASING.md](RELEASING.md) for the future GitHub Actions bootstrap and Trusted Publisher transition. Publishing, tagging, pushing, and release creation remain outside Batch 3.
+No package has been published. See [RELEASING.md](RELEASING.md) for the future GitHub Actions bootstrap and Trusted Publisher transition. Publishing, tagging, pushing, and release creation remain outside Batch 4.
 
 ## License
 

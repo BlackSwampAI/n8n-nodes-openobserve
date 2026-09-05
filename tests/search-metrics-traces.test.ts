@@ -41,16 +41,16 @@ function context(
 }
 
 describe('Batch 3 metadata', () => {
-	it('exposes only the five implemented resources and defers service graph', () => {
+	it('retains all Batch 3 resources and defers service graph', () => {
 		const node = new OpenObserve();
 		const resource = node.description.properties.find((p) => p.name === 'resource');
-		expect(resource?.options).toMatchObject([
-			{ value: 'log' },
-			{ value: 'metric' },
-			{ value: 'search' },
-			{ value: 'stream' },
-			{ value: 'trace' },
-		]);
+		expect(resource?.options).toEqual(
+			expect.arrayContaining(
+				['log', 'metric', 'search', 'stream', 'trace'].map((value) =>
+					expect.objectContaining({ value }),
+				),
+			),
+		);
 		const trace = node.description.properties.find(
 			(p) => p.name === 'operation' && p.displayOptions?.show?.resource?.includes('trace'),
 		);

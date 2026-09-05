@@ -19,6 +19,10 @@ import { executeStreamItem, getManyStreams } from './resources/stream/execute';
 import type { StreamListResponse, StreamType } from './resources/stream/types';
 import { traceProperties } from './resources/trace/descriptions';
 import { executeTrace } from './resources/trace/execute';
+import { functionProperties } from './resources/function/descriptions';
+import { executeFunction } from './resources/function/execute';
+import { dashboardProperties } from './resources/dashboard/descriptions';
+import { executeDashboard } from './resources/dashboard/execute';
 import { normalizeOpenObserveError } from './shared/errors';
 import { openObserveApiRequest } from './shared/transport';
 
@@ -62,6 +66,8 @@ export class OpenObserve implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
+					{ name: 'Dashboard', value: 'dashboard' },
+					{ name: 'Function', value: 'function' },
 					{ name: 'Log', value: 'log' },
 					{ name: 'Metric', value: 'metric' },
 					{ name: 'Search', value: 'search' },
@@ -75,11 +81,70 @@ export class OpenObserve implements INodeType {
 			...searchProperties,
 			...metricProperties,
 			...traceProperties,
+			...functionProperties,
+			...dashboardProperties,
 		],
 	};
 
 	methods = {
 		listSearch: {
+			async searchFunctions(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const response = (await openObserveApiRequest.call(this, {
+					pathSegments: ['functions'],
+				})) as { list?: Array<{ name?: string }> };
+				const needle = (filter ?? '').toLowerCase();
+				return {
+					results: (response.list ?? [])
+						.filter((entry) => entry.name && entry.name.toLowerCase().includes(needle))
+						.map((entry) => ({ name: entry.name as string, value: entry.name as string })),
+				};
+			},
+			async searchDashboards(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const selectedFolder = this.getNodeParameter('folderId', 'default');
+				const folder =
+					typeof selectedFolder === 'object' && selectedFolder !== null && 'value' in selectedFolder
+						? String(selectedFolder.value || 'default')
+						: String(selectedFolder || 'default');
+				const response = (await openObserveApiRequest.call(this, {
+					pathSegments: ['dashboards'],
+					query: { folder, ...(filter ? { title: filter, pageSize: 100 } : {}) },
+				})) as {
+					dashboards?: Array<{ dashboard_id?: string; title?: string; folder_name?: string }>;
+				};
+				return {
+					results: (response.dashboards ?? [])
+						.filter((entry) => entry.dashboard_id)
+						.map((entry) => ({
+							name: `${entry.title || entry.dashboard_id}${entry.folder_name ? ` (${entry.folder_name})` : ''}`,
+							value: entry.dashboard_id as string,
+						})),
+				};
+			},
+			async searchDashboardFolders(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const response = (await openObserveApiRequest.call(this, {
+					apiPathMode: 'v2',
+					pathSegments: ['folders', 'dashboards'],
+				})) as { list?: Array<{ folderId?: string; name?: string }> };
+				const needle = (filter ?? '').toLowerCase();
+				const results = [
+					...(needle && !'default'.includes(needle) ? [] : [{ name: 'Default', value: 'default' }]),
+					...(response.list ?? [])
+						.filter((entry) => entry.folderId && entry.name?.toLowerCase().includes(needle))
+						.map((entry) => ({ name: entry.name as string, value: entry.folderId as string })),
+				];
+				return {
+					results: [...new Map(results.map((entry) => [entry.value, entry])).values()],
+				};
+			},
 			async searchStreams(
 				this: ILoadOptionsFunctions,
 				filter?: string,
@@ -113,6 +178,8 @@ export class OpenObserve implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const input = this.getInputData();
 		const resource = this.getNodeParameter('resource', 0) as
+			| 'dashboard'
+			| 'function'
 			| 'log'
 			| 'metric'
 			| 'search'
@@ -154,7 +221,11 @@ export class OpenObserve implements INodeType {
 					output.push(...(await executeMetric(this, operation, itemIndex)));
 				else if (resource === 'search')
 					output.push(...(await executeSearch(this, operation, itemIndex)));
-				else output.push(...(await executeTrace(this, operation, itemIndex)));
+				else if (resource === 'trace')
+					output.push(...(await executeTrace(this, operation, itemIndex)));
+				else if (resource === 'function')
+					output.push(...(await executeFunction(this, operation, itemIndex)));
+				else output.push(...(await executeDashboard(this, operation, itemIndex)));
 			} catch (error) {
 				const normalized = executionError(this, error, itemIndex);
 				if (!this.continueOnFail()) throw normalized;
