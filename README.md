@@ -27,7 +27,10 @@ Service accounts are preferred for self-hosted production automation. OpenObserv
 
 ## Operations
 
-No business operations are implemented in Batch 1. The current package provides only the credential and shared API foundation; the proposed v0.1 resources and current API routes are frozen for review in [docs/api-matrix.md](docs/api-matrix.md). This README will list only implemented operations once they exist.
+- Stream: Create, Get Many, Get Schema, Update Settings, Delete Fields, and Delete for log, metric, and trace stream types.
+- Log: Ingest one structured JSON object or batch all n8n input-item JSON objects through OpenObserve's ordinary JSON-array endpoint.
+
+Ingestion can infer and create a log stream, so explicit Create is optional. Destructive operations require confirmation. Other proposed v0.1 resources remain documented but unimplemented in [docs/api-matrix.md](docs/api-matrix.md).
 
 ## Development
 
@@ -46,7 +49,7 @@ The local OpenObserve harness and smoke procedure are documented in [docs/testin
 
 ## Release status
 
-No package has been published. See [RELEASING.md](RELEASING.md) for the future GitHub Actions bootstrap and Trusted Publisher transition. Publishing, tagging, pushing, and release creation are outside the current API-foundation batch.
+No package has been published. See [RELEASING.md](RELEASING.md) for the future GitHub Actions bootstrap and Trusted Publisher transition. Publishing, tagging, pushing, and release creation remain outside Batch 2.
 
 ## License
 

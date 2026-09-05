@@ -6,7 +6,7 @@
 nodes/
   OpenObserve/
     OpenObserve.node.ts       action-node registration and routing
-    actions/<resource>/       operation descriptions and execution
+    resources/<resource>/     operation descriptions, types, and execution
     shared/                   transport, pagination, errors, JSON, dates
   OpenObserveTrigger/         alert webhook trigger after feasibility gate
 credentials/
@@ -15,7 +15,7 @@ tests/
   unit/ contract/ e2e/
 ```
 
-Batch 0 registered an inert, compile-safe action-node shell. Batch 1 adds its credential and shared API foundation without adding resource operations or trigger registration; later batches add bounded resource groups and their tests.
+Batch 0 registered the shell, Batch 1 added credentials and the shared API foundation, and Batch 2 adds modular Stream and Log resources. Later batches add bounded resource groups and their tests; trigger registration remains gated.
 
 ## API and authentication boundary
 
@@ -52,6 +52,7 @@ This repository is an independent MIT-licensed API integration and is not affili
 
 - Batch 0: research, identity, inert scaffold, CI, local OSS harness.
 - Batch 1: credential design, transport/error/date/JSON helpers, health/auth contract tests.
+- Batch 2: six Stream operations and ordinary JSON Log Ingest/Ingest Many, including pinned OSS coverage.
 - Later action batches: implement only matrix operations with focused unit + OSS/Cloud contract tests.
 - Trigger batch: only after the documented feasibility and safety gate.
 - Release batch: UX audit, compatibility declaration, package install test, first-publication bootstrap, provenance verification.
