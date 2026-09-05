@@ -1,6 +1,8 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-const show = (operations: string[]) => ({ show: { resource: ['search'], operation: operations } });
+const show = (operations: string[]) => ({
+	displayOptions: { show: { resource: ['search'], operation: operations } },
+});
 
 export const searchProperties: INodeProperties[] = [
 	{

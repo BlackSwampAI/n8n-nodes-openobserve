@@ -54,11 +54,11 @@ This repository is an independent MIT-licensed API integration and is not affili
 
 - Batch 0: research, identity, inert scaffold, CI, local OSS harness.
 - Batch 1: credential design, transport/error/date/JSON helpers, health/auth contract tests.
-- Batch 2: six Stream operations and ordinary JSON Log Ingest/Ingest Many, including pinned OSS coverage.
-- Batch 3: SQL Search, ordinary JSON metrics plus Prometheus-compatible reads, and OSS-safe Trace Latest/DAG reads. Enterprise-only Service Graph is deferred.
+- Batch 2: five Stream management/read operations and ordinary JSON Log Ingest/Ingest Many, including pinned OSS coverage. Explicit user-defined-schema provisioning is deferred.
+- Batch 3: SQL Search, Prometheus-compatible reads, and OSS-safe Trace Latest/DAG reads. Metric ingestion and Enterprise-only Service Graph are deferred.
 - Batch 4: Function lifecycle/VRL validation and version-preserving Dashboard lifecycle. Panel CRUD remains deferred.
 - Batch 5: reusable Alert Templates and webhook Destinations plus current-v2 scheduled/real-time Alert lifecycle and mixed-version history. Destination response headers are always redacted.
 - Batch 6: the Alert Triggered webhook owns deterministic template/destination names and a random per-node secret in node static data. Activation unions its destination into selected alerts through full v2 GET/PUT preservation; rollback and deactivation remove only owned changes. Name collisions or changed ownership fields fail closed.
 - Batch 7: Pipeline graphs use structured JSON with friendly name/description/type/enabled precedence. Updates GET and merge the full current graph, preserve `pipeline_id`/`version`, and PUT the collection route. User automation cannot select or mutate system `evaluation` pipelines or remote destinations.
-- Batch 8: completed package/metadata/operation audit and disposable packed-package n8n load validation; hosted non-destructive smoke and final human UI review remain release gates.
+- Batch 8: completed package/metadata/operation audit and disposable packed-package n8n load validation; Batch 8.1 reduced low-value telemetry provisioning/ingestion UX while preserving the automation surface. Hosted non-destructive smoke and final human UI review remain release gates.
 - Release batch: UX audit, compatibility declaration, package install test, first-publication bootstrap, provenance verification.

@@ -12,7 +12,7 @@ import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workf
 import { logProperties } from './resources/log/descriptions';
 import { ingestLogItem, ingestManyLogs } from './resources/log/execute';
 import { metricProperties } from './resources/metric/descriptions';
-import { executeMetric, ingestManyMetrics, ingestMetric } from './resources/metric/execute';
+import { executeMetric } from './resources/metric/execute';
 import { searchProperties } from './resources/search/descriptions';
 import { executeSearch } from './resources/search/execute';
 import { streamProperties } from './resources/stream/descriptions';
@@ -347,9 +347,6 @@ export class OpenObserve implements INodeType {
 			if (resource === 'log' && operation === 'ingestMany') {
 				return [[await ingestManyLogs(this, input)]];
 			}
-			if (resource === 'metric' && operation === 'ingestMany') {
-				return [[await ingestManyMetrics(this, input)]];
-			}
 		} catch (error) {
 			const normalized = executionError(this, error);
 			if (this.continueOnFail()) {
@@ -370,8 +367,6 @@ export class OpenObserve implements INodeType {
 			try {
 				if (resource === 'stream') output.push(await executeStreamItem(this, operation, itemIndex));
 				else if (resource === 'log') output.push(await ingestLogItem(this, itemIndex));
-				else if (resource === 'metric' && operation === 'ingest')
-					output.push(await ingestMetric(this, itemIndex));
 				else if (resource === 'metric')
 					output.push(...(await executeMetric(this, operation, itemIndex)));
 				else if (resource === 'search')

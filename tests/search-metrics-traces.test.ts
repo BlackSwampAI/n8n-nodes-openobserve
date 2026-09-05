@@ -1,34 +1,16 @@
-import type {
-	IExecuteFunctions,
-	ILoadOptionsFunctions,
-	INode,
-	INodeExecutionData,
-} from 'n8n-workflow';
+import type { IExecuteFunctions, ILoadOptionsFunctions, INodeExecutionData } from 'n8n-workflow';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { requestMock } = vi.hoisted(() => ({ requestMock: vi.fn() }));
 vi.mock('../nodes/OpenObserve/shared/transport', () => ({ openObserveApiRequest: requestMock }));
 
 import { OpenObserve } from '../nodes/OpenObserve/OpenObserve.node';
-import {
-	executeMetric,
-	ingestManyMetrics,
-	ingestMetric,
-} from '../nodes/OpenObserve/resources/metric/execute';
+import { executeMetric } from '../nodes/OpenObserve/resources/metric/execute';
 import { executeSearch } from '../nodes/OpenObserve/resources/search/execute';
 import { executeTrace } from '../nodes/OpenObserve/resources/trace/execute';
-import { OpenObserveValidationError } from '../nodes/OpenObserve/shared/validation-error';
 
 const start = '2026-09-05T00:00:00.000Z';
 const end = '2026-09-05T01:00:00.000Z';
-const fakeNode: INode = {
-	id: 'b3',
-	name: 'OpenObserve',
-	type: '@blackswampai/n8n-nodes-openobserve.openObserve',
-	typeVersion: 1,
-	position: [0, 0],
-	parameters: {},
-};
 function context(
 	parameters: Record<string, unknown>,
 	input: INodeExecutionData[] = [],
@@ -218,34 +200,11 @@ describe('Search', () => {
 
 describe('Metrics', () => {
 	beforeEach(() => requestMock.mockReset());
-	it('ingests one and many records with lineage and partial counts', async () => {
-		requestMock.mockResolvedValue({ status: [{ name: 'metric', successful: 1, failed: 1 }] });
-		const one = await ingestMetric(context({ metricJson: '{"__name__":"metric","value":1}' }), 0);
-		expect(one.pairedItem).toEqual({ item: 0 });
-		expect(requestMock.mock.calls[0][0].body).toEqual([{ __name__: 'metric', value: 1 }]);
-		const input = [
-			{ json: { __name__: 'metric', value: 1 } },
-			{ json: { __name__: 'metric', value: 2 } },
-		];
-		const many = await ingestManyMetrics(context({}, input), input);
-		expect(many.pairedItem).toEqual([{ item: 0 }, { item: 1 }]);
-		expect(many.json.partialFailure).toBe(true);
-	});
-	it('pairs a node-boundary Ingest Many continue-on-fail error to every input', async () => {
-		requestMock.mockImplementationOnce(async () => {
-			throw new OpenObserveValidationError('Metric batch rejected safely');
-		});
-		const input = [{ json: { value: 1 } }, { json: { value: 2 } }];
-		const executionContext = {
-			getNodeParameter: (name: string) =>
-				(({ resource: 'metric', operation: 'ingestMany' }) as Record<string, unknown>)[name],
-			getInputData: () => input,
-			getNode: () => fakeNode,
-			continueOnFail: () => true,
-		} as unknown as IExecuteFunctions;
-		const [output] = await new OpenObserve().execute.call(executionContext);
-		expect(output[0].pairedItem).toEqual([{ item: 0 }, { item: 1 }]);
-		expect(output[0].json.error).toContain('Metric batch rejected safely');
+	it.each(['ingest', 'ingestMany'])('rejects deferred %s without transport', async (operation) => {
+		await expect(executeMetric(context({}), operation, 0)).rejects.toThrow(
+			/Unsupported Metric operation/,
+		);
+		expect(requestMock).not.toHaveBeenCalled();
 	});
 	it.each([
 		[
@@ -353,7 +312,6 @@ describe('Metrics', () => {
 			),
 		).rejects.toThrow(/Start time/);
 		await expect(executeMetric(context({ limit: 0 }), 'getMetadata', 0)).rejects.toThrow(/Limit/);
-		await expect(ingestManyMetrics(context({}), [])).rejects.toThrow(/at least one/);
 	});
 	it.each(['1h30m', '54s321ms'])('accepts composite Prometheus step %s', async (step) => {
 		requestMock.mockResolvedValue({ status: 'success', data: [] });

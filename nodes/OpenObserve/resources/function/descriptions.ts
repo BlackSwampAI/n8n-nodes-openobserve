@@ -1,6 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 const show = (operations: string[]) => ({
-	show: { resource: ['function'], operation: operations },
+	displayOptions: { show: { resource: ['function'], operation: operations } },
 });
 const selected = ['getDependencies', 'update', 'delete'];
 const configured = ['create', 'update'];

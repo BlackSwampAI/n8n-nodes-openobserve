@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 // Repository-level tests intentionally inspect local fixture and metadata files.
 // eslint-disable-next-line @n8n/community-nodes/no-restricted-imports
 import { access, readFile } from 'node:fs/promises';
-import { test } from 'vitest';
+import { expect, it, test } from 'vitest';
 import { OpenObserve } from '../nodes/OpenObserve/OpenObserve.node';
 
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
@@ -119,14 +119,12 @@ test('the advertised v0.1 resource and operation matrix is complete', () => {
 			'getLabelValues',
 			'getLabels',
 			'getMetadata',
-			'ingest',
-			'ingestMany',
 			'instantQuery',
 			'rangeQuery',
 		],
 		pipeline: ['create', 'delete', 'disable', 'enable', 'get', 'getHistory', 'getMany', 'update'],
 		search: ['getFieldValues', 'query', 'searchAround'],
-		stream: ['create', 'delete', 'deleteFields', 'getMany', 'getSchema', 'updateSettings'],
+		stream: ['delete', 'deleteFields', 'getMany', 'getSchema', 'updateSettings'],
 		trace: ['getDag', 'getLatest'],
 	};
 	for (const [resource, operations] of Object.entries(expected)) {
@@ -136,5 +134,69 @@ test('the advertised v0.1 resource and operation matrix is complete', () => {
 				candidate.displayOptions?.show?.resource?.includes(resource),
 		);
 		assert.deepEqual(optionValues(property?.options), operations, resource);
+	}
+	expect(Object.values(expected).flat()).toHaveLength(59);
+});
+
+it('keeps representative editor selections focused and hides unrelated dynamic locators', () => {
+	const properties = new OpenObserve().description.properties;
+	for (const property of properties) {
+		expect(property).not.toHaveProperty('show');
+	}
+	const visibleNames = (resource: string, operation: string) =>
+		properties
+			.filter((property) => {
+				const show = property.displayOptions?.show;
+				if (!show) return property.name === 'resource';
+				return Object.entries(show).every(([name, accepted]) => {
+					const value =
+						name === 'resource' ? resource : name === 'operation' ? operation : undefined;
+					return value === undefined || (accepted as unknown[]).includes(value);
+				});
+			})
+			.map((property) => property.name);
+
+	expect(visibleNames('stream', 'getMany')).toEqual(
+		expect.arrayContaining([
+			'resource',
+			'operation',
+			'streamType',
+			'returnAll',
+			'limit',
+			'keyword',
+			'sort',
+		]),
+	);
+	expect(visibleNames('stream', 'getMany')).not.toEqual(
+		expect.arrayContaining(['streamName', 'fieldsJson', 'settingsJson']),
+	);
+	expect(visibleNames('metric', 'instantQuery')).toEqual(
+		expect.arrayContaining([
+			'resource',
+			'operation',
+			'promql',
+			'queryTime',
+			'queryTimeout',
+			'rawResponse',
+		]),
+	);
+	expect(visibleNames('metric', 'instantQuery')).not.toEqual(
+		expect.arrayContaining(['metricJson', 'streamName']),
+	);
+	for (const [resource, operation] of [
+		['alert', 'create'],
+		['pipeline', 'create'],
+	] as const) {
+		const visible = properties.filter((property) =>
+			visibleNames(resource, operation).includes(property.name),
+		);
+		const hiddenDynamic = properties.filter(
+			(property) =>
+				!visible.includes(property) &&
+				property.type === 'resourceLocator' &&
+				property.modes?.some((mode) => mode.typeOptions?.searchListMethod),
+		);
+		expect(hiddenDynamic.length).toBeGreaterThan(0);
+		expect(visible.map((property) => property.name)).toContain('operation');
 	}
 });

@@ -56,7 +56,7 @@ describe('Stream and Log node metadata', () => {
 		expect(operationProperties).toHaveLength(2);
 		expect(operationProperties[0].displayOptions?.show?.resource).toEqual(['stream']);
 		expect(operationProperties[1].displayOptions?.show?.resource).toEqual(['log']);
-		expect(operationProperties[0].options).toHaveLength(6);
+		expect(operationProperties[0].options).toHaveLength(5);
 		expect(operationProperties[1].options).toHaveLength(2);
 	});
 
@@ -75,18 +75,19 @@ describe('Stream and Log node metadata', () => {
 describe('Stream requests', () => {
 	beforeEach(() => requestMock.mockReset());
 
-	it('builds create, schema, settings, delete-fields, and delete requests', async () => {
+	it('rejects the deferred Create operation without transport', async () => {
+		await expect(
+			executeStreamItem(
+				executeContext({ streamType: 'logs', streamName: 'not_created' }),
+				'create',
+				0,
+			),
+		).rejects.toThrow(/Unsupported Stream operation/);
+		expect(requestMock).not.toHaveBeenCalled();
+	});
+
+	it('builds schema, settings, delete-fields, and delete requests', async () => {
 		requestMock.mockResolvedValue({ code: 200, message: 'ok' });
-		await executeStreamItem(
-			executeContext({
-				streamType: 'metrics',
-				streamName: 'created',
-				fieldsJson: '[{"name":"value","type":"Float64"}]',
-				settingsJson: '{"data_retention":1}',
-			}),
-			'create',
-			0,
-		);
 		await executeStreamItem(
 			executeContext({ streamType: 'traces', streamName: 'trace.one', keyword: 'span' }),
 			'getSchema',
@@ -123,13 +124,6 @@ describe('Stream requests', () => {
 		);
 
 		expect(requestMock.mock.calls.map((call) => call[0])).toEqual([
-			{
-				method: 'POST',
-				pathSegments: ['streams', 'created'],
-				query: { type: 'metrics' },
-				body: { fields: [{ name: 'value', type: 'Float64' }], settings: { data_retention: 1 } },
-				itemIndex: 0,
-			},
 			{
 				pathSegments: ['streams', 'trace.one', 'schema'],
 				query: { type: 'traces', keyword: 'span' },

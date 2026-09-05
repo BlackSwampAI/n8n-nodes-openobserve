@@ -1,7 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
 
 const show = (operations: string[]) => ({
-	show: { resource: ['pipeline'], operation: operations },
+	displayOptions: { show: { resource: ['pipeline'], operation: operations } },
 });
 const selected = ['get', 'update', 'delete', 'enable', 'disable'];
 
