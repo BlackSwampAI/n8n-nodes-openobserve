@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add real-time and scheduled Pipeline lifecycle, validated graph JSON, enable/disable, and paginated history operations.
 - Add the selected-alert OpenObserve Trigger with ownership-safe template/destination lifecycle and constant-time webhook authentication.
 
 - Established the Black Swamp AI package identity, API research baseline, inert node scaffold, CI gates, and pinned local OpenObserve test environment.

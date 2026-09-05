@@ -30,6 +30,8 @@ import { alertDestinationProperties } from './resources/alertDestination/descrip
 import { executeAlertDestination } from './resources/alertDestination/execute';
 import { alertProperties } from './resources/alert/descriptions';
 import { executeAlert } from './resources/alert/execute';
+import { pipelineProperties } from './resources/pipeline/descriptions';
+import { executePipeline } from './resources/pipeline/execute';
 import { normalizeOpenObserveError } from './shared/errors';
 import { openObserveApiRequest } from './shared/transport';
 
@@ -80,6 +82,7 @@ export class OpenObserve implements INodeType {
 					{ name: 'Function', value: 'function' },
 					{ name: 'Log', value: 'log' },
 					{ name: 'Metric', value: 'metric' },
+					{ name: 'Pipeline', value: 'pipeline' },
 					{ name: 'Search', value: 'search' },
 					{ name: 'Stream', value: 'stream' },
 					{ name: 'Trace', value: 'trace' },
@@ -96,6 +99,7 @@ export class OpenObserve implements INodeType {
 			...alertTemplateProperties,
 			...alertDestinationProperties,
 			...alertProperties,
+			...pipelineProperties,
 		],
 	};
 
@@ -117,6 +121,33 @@ export class OpenObserve implements INodeType {
 			},
 		},
 		listSearch: {
+			async searchPipelines(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const response = (await openObserveApiRequest.call(this, {
+					pathSegments: ['pipelines'],
+				})) as { list?: unknown[] };
+				const needle = (filter ?? '').toLowerCase();
+				return {
+					results: (response.list ?? [])
+						.filter(
+							(entry): entry is { pipeline_id: string; name?: string; kind?: string } =>
+								typeof entry === 'object' &&
+								entry !== null &&
+								!Array.isArray(entry) &&
+								typeof (entry as { pipeline_id?: unknown }).pipeline_id === 'string' &&
+								Boolean((entry as { pipeline_id: string }).pipeline_id.trim()) &&
+								(entry as { kind?: string }).kind !== 'evaluation' &&
+								(typeof (entry as { name?: unknown }).name !== 'string' ||
+									(entry as { name: string }).name.toLowerCase().includes(needle)),
+						)
+						.map((entry) => ({
+							name: entry.name || (entry.pipeline_id as string),
+							value: entry.pipeline_id as string,
+						})),
+				};
+			},
 			async searchAlertFolders(
 				this: ILoadOptionsFunctions,
 				filter?: string,
@@ -305,6 +336,7 @@ export class OpenObserve implements INodeType {
 			| 'function'
 			| 'log'
 			| 'metric'
+			| 'pipeline'
 			| 'search'
 			| 'stream'
 			| 'trace';
@@ -354,6 +386,8 @@ export class OpenObserve implements INodeType {
 					output.push(...(await executeAlertTemplate(this, operation, itemIndex)));
 				else if (resource === 'alertDestination')
 					output.push(...(await executeAlertDestination(this, operation, itemIndex)));
+				else if (resource === 'pipeline')
+					output.push(...(await executePipeline(this, operation, itemIndex)));
 				else output.push(...(await executeAlert(this, operation, itemIndex)));
 			} catch (error) {
 				const normalized = executionError(this, error, itemIndex);

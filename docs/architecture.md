@@ -15,7 +15,7 @@ tests/
   unit/ contract/ e2e/
 ```
 
-Batches 1–6 added credentials/shared transport, bounded action resources, alert infrastructure, and the selected-alert trigger. Later batches add only the remaining bounded resource groups and their tests.
+Batches 1–7 added credentials/shared transport, the frozen v0.1 action resources, alert infrastructure, the selected-alert trigger, and Pipeline automation. Batch 8 is release hardening and validation rather than resource expansion.
 
 ## API and authentication boundary
 
@@ -59,6 +59,6 @@ This repository is an independent MIT-licensed API integration and is not affili
 - Batch 4: Function lifecycle/VRL validation and version-preserving Dashboard lifecycle. Panel CRUD remains deferred.
 - Batch 5: reusable Alert Templates and webhook Destinations plus current-v2 scheduled/real-time Alert lifecycle and mixed-version history. Destination response headers are always redacted.
 - Batch 6: the Alert Triggered webhook owns deterministic template/destination names and a random per-node secret in node static data. Activation unions its destination into selected alerts through full v2 GET/PUT preservation; rollback and deactivation remove only owned changes. Name collisions or changed ownership fields fail closed.
-- Later action batches: implement only matrix operations with focused unit + OSS/Cloud contract tests.
-- Trigger batch: only after the documented feasibility and safety gate.
+- Batch 7: Pipeline graphs use structured JSON with friendly name/description/type/enabled precedence. Updates GET and merge the full current graph, preserve `pipeline_id`/`version`, and PUT the collection route. User automation cannot select or mutate system `evaluation` pipelines or remote destinations.
+- Batch 8: final UX, compatibility, real n8n load/execution, hosted non-destructive smoke, and release-readiness audit.
 - Release batch: UX audit, compatibility declaration, package install test, first-publication bootstrap, provenance verification.
