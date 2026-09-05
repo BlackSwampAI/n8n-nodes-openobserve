@@ -16,6 +16,8 @@ These values are fixtures, not production secrets. The port binds to loopback. T
 
 - `tests/scaffold.test.ts`: identity and packaging invariants; no server needed.
 - `tests/foundation.test.ts`: credential, transport, JSON/date conversion, URL encoding, error, pagination, and local-harness invariants; no server needed.
+- `tests/streams-logs.test.ts`: mocked request, UX, pagination, validation, partial-failure, input-lineage, normalized-name, and dynamic-list coverage for every Batch 2 operation.
+- `tests/streams-logs.live.test.ts`: opt-in pinned OSS flow; run `OPENOBSERVE_LIVE=1 npx vitest run tests/streams-logs.live.test.ts` while Compose is healthy. The fixture rejects non-loopback Base URLs and organizations other than the disposable local `default` org. It owns exactly two streams named with `n8n_batch2_live_` plus a sanitized run-scoped suffix (`OPENOBSERVE_LIVE_RUN_ID`, or the local process ID), deletes only those exact names with `delete_all=false` in `finally`, and confirms both are absent. It never deletes related resources, sweeps by prefix, or removes the named volume. If safe deletion with `delete_all=false` stops working, the test must fail rather than broaden cleanup.
 - Future `tests/unit/` suites: operation parameters and resource-specific behavior, added with their implementation batch.
 - `tests/contract/oss/`: one suite against the pinned container, independently runnable.
 - `tests/contract/cloud/`: the same safe reads plus isolated writes against a designated non-production Cloud org; credentials come only from CI secrets.
@@ -37,6 +39,8 @@ docker compose down
 ```
 
 The container healthcheck uses the distroless image's native `/openobserve node list` command; it proves that the initialized node reports successfully without depending on a shell or curl inside the image. It does not prove HTTP readiness or authentication. The host-side HTTP health and authenticated stream-list calls are the authoritative API smoke checks and remain separate so process initialization cannot be mistaken for working HTTP/authentication/organization routing. Never run the fixtures against an unrecognized base URL or organization.
+
+The final pre-npm smoke target is the non-disposable deployment at `https://observe.blackswampai.com` and its existing `n8n` stream. Do not store its credentials. With a runtime-supplied least-privilege account, that smoke may ingest one uniquely tagged synthetic record and verify it through Stream/Search reads. It must never update settings, delete fields, or delete the `n8n` stream. All destructive lifecycle testing remains confined to the local Docker fixture.
 
 ## Core E2E scenario
 

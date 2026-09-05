@@ -23,7 +23,7 @@ test('package identity and runtime boundary are frozen', () => {
 	assert.equal(packageJson.peerDependencies['n8n-workflow'], '*');
 });
 
-test('only the inert OpenObserve shell and API credential are registered', () => {
+test('the active Batch 2 OpenObserve node and API credential are registered', () => {
 	assert.deepEqual(packageJson.n8n.nodes, ['dist/nodes/OpenObserve/OpenObserve.node.js']);
 	assert.deepEqual(packageJson.n8n.credentials, ['dist/credentials/OpenObserveApi.credentials.js']);
 });
@@ -31,7 +31,7 @@ test('only the inert OpenObserve shell and API credential are registered', () =>
 test('node metadata keeps the shell visible and tool-compatible', async () => {
 	assert.match(nodeSource, /icon:\s*\{\s*light:\s*'file:openobserve\.svg'/);
 	assert.match(nodeSource, /dark:\s*'file:openobserve\.dark\.svg'/);
-	assert.match(nodeSource, /subtitle:\s*'OpenObserve API development scaffold'/);
+	assert.match(nodeSource, /subtitle:\s*'=\{\{\$parameter\["resource"\]/);
 	assert.match(nodeSource, /usableAsTool:\s*true/);
 	assert.match(
 		nodeSource,
