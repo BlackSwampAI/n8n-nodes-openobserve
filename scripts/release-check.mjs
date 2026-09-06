@@ -37,6 +37,10 @@ if (!existsSync(resolve(root, templateMarkerPath))) {
 	}
 }
 const finalDocumentation = ['docs/api-matrix.md', 'docs/testing.md', 'docs/branding.md'];
+for (const guidance of ['Creator Portal', 'exact published version', 'card version and logo']) {
+	if (!read('docs/testing.md').includes(guidance))
+		fail(`Creator Portal qualification guidance is missing: ${guidance}`);
+}
 const adoptedBaselineArtifacts = [
 	'.github/pull_request_template.md',
 	'docs/BATCH_HANDOFF_TEMPLATE.md',

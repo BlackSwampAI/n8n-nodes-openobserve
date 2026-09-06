@@ -23,4 +23,6 @@ Before packaging, `npm run scan:source` applies scanner 0.34.0 to its official s
 
 After the workflow completes, verify the exact npm version, `latest` dist-tag, provenance attestation, immutable Git tag, successful workflow, matching GitHub release, and post-publication scanner result before Creator Portal submission.
 
+Submit only that exact published version. Visually inspect and record the Creator Portal card version and logo; a correct npm tarball does not guarantee fresh portal metadata.
+
 npm versions and published tags are immutable. Never reuse or move them.
