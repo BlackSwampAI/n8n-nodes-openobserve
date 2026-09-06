@@ -78,11 +78,12 @@ export const alertTemplateProperties: INodeProperties[] = [
 		...show(['create']),
 	},
 	{
-		displayName: 'Template JSON',
+		displayName: 'Advanced Template JSON',
 		name: 'templateJson',
 		type: 'json',
 		default: '{}',
-		description: 'Additional supported template fields; friendly fields take precedence',
+		description:
+			'Supplements the friendly template fields with other supported fields; friendly fields win on conflicts',
 		...show(['create']),
 	},
 	{
@@ -91,7 +92,7 @@ export const alertTemplateProperties: INodeProperties[] = [
 		type: 'json',
 		default: '{}',
 		description:
-			'Fields to merge into the current template; the selected template name cannot be changed',
+			'Supplements the current template with other supported fields; the selected template name cannot be changed',
 		...show(['update']),
 	},
 	{

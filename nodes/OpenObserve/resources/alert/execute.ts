@@ -27,6 +27,26 @@ const one = (value: unknown, itemIndex: number): INodeExecutionData[] => [
 const many = (values: unknown[], itemIndex: number): INodeExecutionData[] =>
 	values.map((value) => ({ json: value as IDataObject, pairedItem: { item: itemIndex } }));
 const v2 = { apiPathMode: 'v2' as const };
+const hasOwn = (value: object, key: string) => Object.prototype.hasOwnProperty.call(value, key);
+function validateQueryCondition(
+	queryCondition: Record<string, unknown>,
+	itemIndex: number,
+	options: { requireType: boolean },
+): void {
+	const type = queryCondition.type;
+	if (options.requireType || type !== undefined) {
+		if (!['custom', 'sql', 'promql'].includes(String(type ?? '')))
+			throw new OpenObserveValidationError(
+				`Query JSON type must be custom, sql, or promql at item ${itemIndex}`,
+			);
+		if (type === 'sql' && !String(queryCondition.sql ?? '').trim())
+			throw new OpenObserveValidationError(`Query JSON SQL text is required at item ${itemIndex}`);
+		if (type === 'promql' && !String(queryCondition.promql ?? '').trim())
+			throw new OpenObserveValidationError(
+				`Query JSON PromQL text is required at item ${itemIndex}`,
+			);
+	}
+}
 function createBody(context: IExecuteFunctions, itemIndex: number): IDataObject {
 	const advanced = requireJsonObject(
 		getParameter(context, 'alertJson', itemIndex, '{}'),
@@ -57,14 +77,7 @@ function createBody(context: IExecuteFunctions, itemIndex: number): IDataObject 
 		'Query JSON',
 		itemIndex,
 	);
-	if (!['custom', 'sql', 'promql'].includes(String(queryCondition.type ?? '')))
-		throw new OpenObserveValidationError(
-			`Query JSON type must be custom, sql, or promql at item ${itemIndex}`,
-		);
-	if (queryCondition.type === 'sql' && !String(queryCondition.sql ?? '').trim())
-		throw new OpenObserveValidationError(`Query JSON SQL text is required at item ${itemIndex}`);
-	if (queryCondition.type === 'promql' && !String(queryCondition.promql ?? '').trim())
-		throw new OpenObserveValidationError(`Query JSON PromQL text is required at item ${itemIndex}`);
+	validateQueryCondition(queryCondition, itemIndex, { requireType: true });
 	return {
 		...advanced,
 		name: getRequiredParameter(context, 'name', itemIndex, 'Name'),
@@ -97,6 +110,149 @@ function createBody(context: IExecuteFunctions, itemIndex: number): IDataObject 
 		enabled: getParameter(context, 'enabled', itemIndex, false),
 		alert_type: getParameter(context, 'alertType', itemIndex, 'scheduled'),
 	} as IDataObject;
+}
+
+function updateBody(
+	context: IExecuteFunctions,
+	itemIndex: number,
+	current: IDataObject,
+): IDataObject {
+	const fields = getParameter<Record<string, unknown>>(context, 'updateFields', itemIndex, {});
+	if (!fields || typeof fields !== 'object' || Array.isArray(fields))
+		throw new OpenObserveValidationError(`Fields to Update must be an object at item ${itemIndex}`);
+	const advanced = requireJsonObject(
+		hasOwn(fields, 'alertJson')
+			? fields.alertJson
+			: getParameter(context, 'alertJson', itemIndex, '{}'),
+		'Advanced Update JSON',
+		itemIndex,
+	);
+	const friendlyFieldNames = Object.keys(fields).filter((key) => key !== 'alertJson');
+	if (Object.keys(advanced).length === 0 && friendlyFieldNames.length === 0)
+		throw new OpenObserveValidationError(`Add at least one field to update at item ${itemIndex}`);
+	if (advanced.alert_type === 'anomaly_detection' || advanced.alert_type === 'composite')
+		throw new OpenObserveValidationError(
+			`Only scheduled and real-time alerts are supported at item ${itemIndex}`,
+		);
+	const currentType = current.alert_type;
+	if (hasOwn(advanced, 'alert_type') && advanced.alert_type !== currentType)
+		throw new OpenObserveValidationError(
+			`Alert type cannot be changed during Update at item ${itemIndex}`,
+		);
+	if (hasOwn(advanced, 'is_real_time') && advanced.is_real_time !== current.is_real_time)
+		throw new OpenObserveValidationError(
+			`Alert type cannot be changed during Update at item ${itemIndex}`,
+		);
+	if (hasOwn(advanced, 'name') && advanced.name !== current.name)
+		throw new OpenObserveValidationError(
+			`Alert name cannot be changed during Update at item ${itemIndex}`,
+		);
+
+	const nested = (key: 'query_condition' | 'trigger_condition'): Record<string, unknown> => {
+		const currentValue = current[key];
+		const updateValue = advanced[key];
+		if (
+			updateValue !== undefined &&
+			(!updateValue || typeof updateValue !== 'object' || Array.isArray(updateValue))
+		)
+			throw new OpenObserveValidationError(
+				`Advanced Update JSON ${key} must be an object at item ${itemIndex}`,
+			);
+		return {
+			...(currentValue && typeof currentValue === 'object' && !Array.isArray(currentValue)
+				? (currentValue as Record<string, unknown>)
+				: {}),
+			...((updateValue as Record<string, unknown> | undefined) ?? {}),
+		};
+	};
+	const result: IDataObject = {
+		...current,
+		...advanced,
+		...(hasOwn(advanced, 'query_condition') ? { query_condition: nested('query_condition') } : {}),
+		...(hasOwn(advanced, 'trigger_condition')
+			? { trigger_condition: nested('trigger_condition') }
+			: {}),
+	};
+
+	if (hasOwn(fields, 'description')) result.description = String(fields.description ?? '');
+	if (hasOwn(fields, 'destinations')) {
+		const destinations = fields.destinations;
+		if (
+			!Array.isArray(destinations) ||
+			destinations.length === 0 ||
+			!destinations.every((value) => typeof value === 'string' && value.trim())
+		)
+			throw new OpenObserveValidationError(
+				`Select at least one destination containing a non-empty name at item ${itemIndex}`,
+			);
+		result.destinations = destinations.map((value) => value.trim());
+	}
+	if (hasOwn(fields, 'queryJson')) {
+		const queryUpdate = requireJsonObject(fields.queryJson, 'Query JSON', itemIndex);
+		validateQueryCondition(queryUpdate, itemIndex, { requireType: false });
+		result.query_condition = {
+			...(result.query_condition && typeof result.query_condition === 'object'
+				? (result.query_condition as Record<string, unknown>)
+				: {}),
+			...queryUpdate,
+		};
+	}
+	const currentIsRealTime = current.is_real_time === true || current.alert_type === 'realtime';
+	const advancedTrigger = advanced.trigger_condition as Record<string, unknown> | undefined;
+	if (
+		currentIsRealTime &&
+		(hasOwn(fields, 'frequency') ||
+			hasOwn(fields, 'period') ||
+			(advancedTrigger !== undefined &&
+				(hasOwn(advancedTrigger, 'frequency') || hasOwn(advancedTrigger, 'period'))))
+	)
+		throw new OpenObserveValidationError(
+			`Check Every and Look Back apply only to scheduled alerts at item ${itemIndex}`,
+		);
+	const triggerCondition = {
+		...(result.trigger_condition && typeof result.trigger_condition === 'object'
+			? (result.trigger_condition as Record<string, unknown>)
+			: {}),
+	};
+	if (hasOwn(fields, 'frequency'))
+		triggerCondition.frequency = requirePositiveSafeInteger(
+			fields.frequency,
+			'Frequency',
+			itemIndex,
+		);
+	if (hasOwn(fields, 'period'))
+		triggerCondition.period = requirePositiveSafeInteger(fields.period, 'Look Back', itemIndex);
+	if (hasOwn(fields, 'threshold'))
+		triggerCondition.threshold = requireNonNegativeSafeInteger(
+			fields.threshold,
+			'Threshold',
+			itemIndex,
+		);
+	if (hasOwn(fields, 'silence'))
+		triggerCondition.silence = requireNonNegativeSafeInteger(fields.silence, 'Cooldown', itemIndex);
+	if (hasOwn(fields, 'operator')) {
+		const operator = String(fields.operator ?? '');
+		if (!['=', '!=', '>', '>=', '<', '<='].includes(operator))
+			throw new OpenObserveValidationError(`Operator is invalid at item ${itemIndex}`);
+		triggerCondition.operator = operator;
+	}
+	if (
+		['frequency', 'period', 'threshold', 'silence', 'operator'].some((key) => hasOwn(fields, key))
+	)
+		result.trigger_condition = triggerCondition;
+	if (hasOwn(advanced, 'query_condition') || hasOwn(fields, 'queryJson'))
+		validateQueryCondition(result.query_condition as Record<string, unknown>, itemIndex, {
+			requireType: true,
+		});
+
+	result.id = current.id;
+	result.org_id = current.org_id;
+	if (hasOwn(current, 'version')) result.version = current.version;
+	if (JSON.stringify(result) === JSON.stringify(current))
+		throw new OpenObserveValidationError(
+			`The supplied fields do not change the alert at item ${itemIndex}`,
+		);
+	return result;
 }
 async function listAlerts(context: IExecuteFunctions, itemIndex: number): Promise<unknown[]> {
 	const returnAll = getParameter(context, 'returnAll', itemIndex, false);
@@ -205,23 +361,15 @@ export async function executeAlert(
 			pathSegments: path,
 			query: { folder },
 			itemIndex,
-		})) as Record<string, unknown>;
-		const update = requireJsonObject(
-			getParameter(context, 'alertJson', itemIndex, '{}'),
-			'Update JSON',
-			itemIndex,
-		);
-		if (update.alert_type === 'anomaly_detection' || update.alert_type === 'composite')
-			throw new OpenObserveValidationError(
-				`Only scheduled and real-time alerts are supported at item ${itemIndex}`,
-			);
+		})) as IDataObject;
+		const body = updateBody(context, itemIndex, current);
 		return one(
 			await openObserveApiRequest.call(context, {
 				...v2,
 				method: 'PUT',
 				pathSegments: path,
 				query: { folder },
-				body: { ...current, ...update, id: current.id, org_id: current.org_id },
+				body,
 				itemIndex,
 			}),
 			itemIndex,

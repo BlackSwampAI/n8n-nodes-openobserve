@@ -75,9 +75,17 @@ export const dashboardProperties: INodeProperties[] = [
 		placeholder: 'Add Field',
 		default: {},
 		description:
-			'Friendly fields to replace; omitted fields retain their current values and Dashboard JSON is applied first',
+			'Friendly fields to replace; omitted fields retain their current values and Advanced Update JSON is applied first',
 		...show(['update']),
 		options: [
+			{
+				displayName: 'Advanced Update JSON',
+				name: 'dashboardJson',
+				type: 'json',
+				default: '{}',
+				description:
+					'Supplements Update Fields by merging other supported fields into the current dashboard definition; friendly fields win on conflicts and omitted fields are preserved',
+			},
 			{ displayName: 'Description', name: 'description', type: 'string', default: '' },
 			{ displayName: 'Title', name: 'title', type: 'string', default: '' },
 		],
@@ -87,17 +95,9 @@ export const dashboardProperties: INodeProperties[] = [
 		name: 'dashboardJson',
 		type: 'json',
 		default: '{"version":8,"tabs":[]}',
-		description: 'Dashboard definition fields; Title and Description take precedence',
-		...show(['create']),
-	},
-	{
-		displayName: 'Dashboard JSON',
-		name: 'dashboardJson',
-		type: 'json',
-		default: '{}',
 		description:
-			'Fields to merge into the current dashboard definition; Title and Description take precedence and omitted fields are preserved',
-		...show(['update']),
+			'Dashboard definition containing its version, tabs, and panels; friendly Title and Description fields win on conflicts',
+		...show(['create']),
 	},
 	{
 		displayName: 'Folder Filter',

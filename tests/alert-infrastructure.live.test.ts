@@ -236,7 +236,13 @@ live('pinned OpenObserve v0.92.2 Batch 5 alert-to-webhook lifecycle', () => {
 				context({
 					alertId,
 					alertFolder: 'default',
-					alertJson: '{"description":"updated fixture"}',
+					alertJson: '{"trigger_condition":{"threshold":2}}',
+					updateFields: {
+						description: 'updated fixture',
+						queryJson:
+							'{"conditions":{"column":"level","operator":"=","value":"error","ignore_case":false}}',
+						threshold: 1,
+					},
 				}),
 				'update',
 				0,
@@ -246,7 +252,18 @@ live('pinned OpenObserve v0.92.2 Batch 5 alert-to-webhook lifecycle', () => {
 				'get',
 				0,
 			);
+			expect(updatedAlert[0].json.name).toBe(names.alert);
 			expect(updatedAlert[0].json.description).toBe('updated fixture');
+			expect((updatedAlert[0].json.query_condition as { type?: string }).type).toBe('custom');
+			expect((updatedAlert[0].json.trigger_condition as { threshold?: number }).threshold).toBe(1);
+			const updatedAlerts = await executeAlert(
+				context({ alertFolder: 'default', returnAll: true }),
+				'getMany',
+				0,
+			);
+			expect(updatedAlerts.find((item) => item.json.name === names.alert)?.json.alert_id).toBe(
+				alertId,
+			);
 			await raw('POST', `/api/${organizationId}/${names.stream}/_json`, [
 				{ level: 'error', message: 'matching fixture' },
 			]);
@@ -286,9 +303,11 @@ live('pinned OpenObserve v0.92.2 Batch 5 alert-to-webhook lifecycle', () => {
 				const existingAlerts = (await raw(
 					'GET',
 					`/api/v2/${organizationId}/alerts?page_size=100&page_idx=0&folder=default`,
-				)) as { list?: Array<{ id?: string; name?: string }> };
-				cloneId ||= existingAlerts.list?.find((entry) => entry.name === names.clone)?.id ?? '';
-				alertId ||= existingAlerts.list?.find((entry) => entry.name === names.alert)?.id ?? '';
+				)) as { list?: Array<{ id?: string; alert_id?: string; name?: string }> };
+				const resolveId = (entry: { id?: string; alert_id?: string } | undefined) =>
+					entry?.id ?? entry?.alert_id ?? '';
+				cloneId ||= resolveId(existingAlerts.list?.find((entry) => entry.name === names.clone));
+				alertId ||= resolveId(existingAlerts.list?.find((entry) => entry.name === names.alert));
 				if (cloneId)
 					await executeAlert(
 						context({ alertId: cloneId, alertFolder: 'default', confirmDestructive: true }),

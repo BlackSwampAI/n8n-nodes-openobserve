@@ -266,7 +266,7 @@ export async function executePipeline(
 	if (operation === 'create') {
 		const advanced = requireJsonObject(
 			getParameter(context, 'pipelineJson', itemIndex, '{}'),
-			'Pipeline JSON',
+			'Advanced Update JSON',
 			itemIndex,
 		) as IDataObject;
 		const pipelineType = getParameter(context, 'pipelineType', itemIndex, 'realtime');
@@ -326,12 +326,14 @@ export async function executePipeline(
 			throw new OpenObserveValidationError(
 				`System evaluation pipelines cannot be updated at item ${itemIndex}`,
 			);
+		const fields = getParameter<IDataObject>(context, 'updateFields', itemIndex, {});
 		const advanced = requireJsonObject(
-			getParameter(context, 'pipelineJson', itemIndex, '{}'),
+			Object.prototype.hasOwnProperty.call(fields, 'pipelineJson')
+				? fields.pipelineJson
+				: getParameter(context, 'pipelineJson', itemIndex, '{}'),
 			'Pipeline JSON',
 			itemIndex,
 		) as IDataObject;
-		const fields = getParameter<IDataObject>(context, 'updateFields', itemIndex, {});
 		const body: IDataObject = {
 			...current,
 			...advanced,

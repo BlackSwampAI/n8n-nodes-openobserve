@@ -86,7 +86,8 @@ export const alertDestinationProperties: INodeProperties[] = [
 		name: 'headersJson',
 		type: 'json',
 		default: '{}',
-		description: 'Header values are treated as secrets and are redacted from node output',
+		description:
+			'HTTP request headers object for the webhook; values are treated as secrets and redacted from node output',
 		...show(['create']),
 	},
 	{
@@ -99,11 +100,12 @@ export const alertDestinationProperties: INodeProperties[] = [
 		...show(['create']),
 	},
 	{
-		displayName: 'Destination JSON',
+		displayName: 'Advanced Destination JSON',
 		name: 'destinationJson',
 		type: 'json',
 		default: '{}',
-		description: 'Additional supported destination fields; webhook fields take precedence',
+		description:
+			'Supplements the friendly webhook fields with other supported destination fields; friendly fields win on conflicts',
 		...show(['create']),
 	},
 	{
@@ -112,7 +114,7 @@ export const alertDestinationProperties: INodeProperties[] = [
 		type: 'json',
 		default: '{}',
 		description:
-			'Fields to merge into the current destination; the selected name cannot be changed. Header values are never returned.',
+			'Supplements the current destination with other supported fields; the selected name cannot be changed and header values are never returned',
 		...show(['update']),
 	},
 	{

@@ -82,7 +82,8 @@ export const functionProperties: INodeProperties[] = [
 		name: 'advancedJson',
 		type: 'json',
 		default: '{}',
-		description: 'Additional verified function fields; friendly fields take precedence',
+		description:
+			'Supplements the friendly function fields with other verified fields; friendly fields win on conflicts',
 		...show(configured),
 	},
 	{
