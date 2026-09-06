@@ -231,14 +231,14 @@ export class OpenObserve implements INodeType {
 						page_idx: 0,
 						...(filter ? { alert_name_substring: filter } : {}),
 					},
-				})) as { list?: Array<{ id?: string; name?: string }> };
+				})) as { list?: Array<{ id?: string; alert_id?: string; name?: string }> };
 				return {
-					results: (response.list ?? [])
-						.filter((entry) => entry.id)
-						.map((entry) => ({
-							name: entry.name || (entry.id as string),
-							value: entry.id as string,
-						})),
+					results: (response.list ?? []).flatMap((entry) => {
+						const id = entry.id ?? entry.alert_id;
+						return typeof id === 'string' && id.trim()
+							? [{ name: entry.name || id, value: id }]
+							: [];
+					}),
 				};
 			},
 			async searchFunctions(

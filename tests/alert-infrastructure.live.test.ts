@@ -230,7 +230,8 @@ live('pinned OpenObserve v0.92.2 Batch 5 alert-to-webhook lifecycle', () => {
 				'getMany',
 				0,
 			);
-			expect(alerts.some((item) => item.json.name === names.alert)).toBe(true);
+			const listedAlert = alerts.find((item) => item.json.name === names.alert);
+			expect(listedAlert?.json.alert_id).toBe(alertId);
 			await executeAlert(
 				context({
 					alertId,
