@@ -5,18 +5,6 @@
 # requirement. Provenance lets anyone cryptographically verify that a package
 # was built by this exact workflow, from this exact repository and commit.
 #
-# ─── PREREQUISITES ─────────────────────────────────────────────────────────────
-#
-# @n8n/node-cli ≥ 0.23.0 is required. Earlier versions do not support the
-# provenance flag passed by `npm run release` in CI, and the publish step will
-# fail. Check the version installed in this project with:
-#
-#   npm list @n8n/node-cli
-#
-# To upgrade:
-#
-#   npm install --save-dev @n8n/node-cli@latest
-#
 # ─── ONE-TIME SETUP ────────────────────────────────────────────────────────────
 #
 # After the first publication — OIDC Trusted Publishing (no long-lived secrets):
@@ -27,8 +15,8 @@
 #        Repository name:  n8n-nodes-openobserve
 #        Workflow name:    publish.yml
 #        Environment:      (leave blank unless you use GitHub Environments)
-#   4. Leave the NPM_TOKEN secret unset in this repository. GitHub's OIDC
-#      token is used instead — no secret ever touches your repo settings.
+#   4. Allow direct npm publish for this workflow.
+#   5. Delete the NPM_TOKEN repository secret and revoke the temporary token.
 #
 # First publication only — temporary granular token bootstrap:
 #   1. On npmjs.com: Access Tokens → Generate New Token → Granular Access Token.
@@ -43,14 +31,8 @@
 #
 # This template uses v-prefixed release tags, for example v0.1.0.
 #
-# ─── RELEASE PROCESS ───────────────────────────────────────────────────────────
-#
-# Run the following command locally to start an interactive release:
-#
-#   npm run release
-#
-# This will lint, build, prompt for a version bump, update the changelog,
-# commit, tag, and push — which triggers this workflow to publish to npm.
+# Never run the publish command locally. An authorized, immutable version tag
+# triggers this workflow after package.json already contains that version.
 
 name: Publish
 
@@ -80,6 +62,12 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           package-manager-cache: false
 
+      - name: Use the lockfile npm version
+        run: npm install --global npm@11.16.0
+
+      - name: Verify npm supports Trusted Publishing
+        run: node scripts/verify-npm-version.mjs
+
       - name: Install dependencies
         run: npm ci
 
@@ -104,17 +92,25 @@ jobs:
       - name: Inspect package boundary
         run: npm run package:check
 
+      - name: Load compiled nodes and credential
+        run: npm run smoke:load
+
+      - name: Install and load packed package
+        run: npm run smoke:install
+
       - name: Release
         # Publishes to npm with a provenance attestation (requires id-token: write above).
         # The complete prepublication gates above run before the CLI's CI-mode
         # lint/build/publish path. The pushed tag must already name package.json's version.
         #
-        # Option A (OIDC): leave NPM_TOKEN unset — the token step is skipped and
-        #   npm uses the OIDC exchange instead.
-        # Option B (token): set NPM_TOKEN in repo secrets — it is written to
-        #   .npmrc here before publishing.
+        # Option A (OIDC): leave NPM_TOKEN unset and npm uses the OIDC exchange.
+        # Option B (first publication): setup-node reads NODE_AUTH_TOKEN from the
+        #   narrowly scoped NPM_TOKEN repository secret.
         run: |
-          [ -n "$NPM_TOKEN" ] && npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          node scripts/prepare-npm-auth.mjs
           npm run release
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify published package
+        run: npm run scan:published

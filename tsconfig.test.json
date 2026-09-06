@@ -7,7 +7,14 @@
 		"target": "es2020",
 		"module": "esnext",
 		"moduleResolution": "bundler",
+		"allowJs": true,
 		"types": ["node", "vitest/globals"]
 	},
-	"include": ["credentials/**/*", "nodes/**/*", "tests/**/*", "vitest.config.mts"]
+	"include": [
+		"credentials/**/*",
+		"nodes/**/*",
+		"scripts/prepare-npm-auth.mjs",
+		"tests/**/*",
+		"vitest.config.mts"
+	]
 }

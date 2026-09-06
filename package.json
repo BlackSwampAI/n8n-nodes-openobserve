@@ -14,12 +14,15 @@
 		"traces"
 	],
 	"author": {
-		"name": "Black Swamp AI",
+		"name": "Christopher J. Nelson",
 		"email": "christopherjnelson@proton.me"
 	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/BlackSwampAI/n8n-nodes-openobserve.git"
+	},
+	"bugs": {
+		"url": "https://github.com/BlackSwampAI/n8n-nodes-openobserve/issues"
 	},
 	"scripts": {
 		"build": "n8n-node build",
@@ -33,7 +36,10 @@
 		"test": "vitest run",
 		"test:unit": "vitest run",
 		"release:check": "node scripts/release-check.mjs",
-		"package:check": "npm run release:check && npm pack --dry-run --cache /tmp/n8n-nodes-openobserve-npm-cache",
+		"package:check": "npm run release:check && node scripts/package-check.mjs",
+		"smoke:load": "node scripts/node-load-smoke.mjs",
+		"smoke:install": "node scripts/package-install-smoke.mjs",
+		"scan:published": "node scripts/scan-published.mjs",
 		"release": "n8n-node release",
 		"prepublishOnly": "n8n-node prerelease"
 	},
@@ -52,7 +58,7 @@
 		]
 	},
 	"devDependencies": {
-		"@n8n/node-cli": "0.42.2",
+		"@n8n/node-cli": "0.46.4",
 		"eslint": "9.32.0",
 		"prettier": "3.6.2",
 		"release-it": "20.2.0",
