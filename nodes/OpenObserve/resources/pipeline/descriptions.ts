@@ -123,7 +123,8 @@ export const pipelineProperties: INodeProperties[] = [
 		displayName: 'Pipeline',
 		name: 'historyPipelineId',
 		type: 'resourceLocator',
-		default: { mode: 'id', value: '' },
+		required: true,
+		default: { mode: 'list', value: '' },
 		...show(['getHistory']),
 		modes: [
 			{

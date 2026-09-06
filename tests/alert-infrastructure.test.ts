@@ -317,6 +317,39 @@ describe('Alert Destination operations', () => {
 
 describe('Alert operations', () => {
 	beforeEach(() => requestMock.mockReset());
+	it('shows folder and target fields exactly where all eleven executors require them', () => {
+		const properties = new OpenObserve().description.properties;
+		const alertProperty = (name: string) =>
+			properties.find(
+				(property) =>
+					property.name === name && property.displayOptions?.show?.resource?.includes('alert'),
+			);
+		expect(alertProperty('alertFolder')?.displayOptions?.show?.operation).toEqual([
+			'create',
+			'getMany',
+			'get',
+			'update',
+			'delete',
+			'enable',
+			'disable',
+			'trigger',
+			'clone',
+			'export',
+		]);
+		expect(alertProperty('alertId')?.displayOptions?.show?.operation).toEqual([
+			'get',
+			'update',
+			'delete',
+			'enable',
+			'disable',
+			'trigger',
+			'clone',
+			'export',
+		]);
+		expect(alertProperty('historyAlertId')?.displayOptions?.show?.operation).toEqual([
+			'getHistory',
+		]);
+	});
 	it('requires a destination before sending the default real-time alert', async () => {
 		await expect(
 			executeAlert(
@@ -479,6 +512,7 @@ describe('Alert operations', () => {
 		);
 		expect(history).toHaveLength(2);
 		expect(requestMock.mock.calls[0][0]).toMatchObject({
+			apiPathMode: 'v2',
 			pathSegments: ['alerts', 'history'],
 			query: { alert_id: 'a', from: 0, size: 2 },
 		});
@@ -507,6 +541,17 @@ describe('Alert operations', () => {
 		const history = await executeAlert(context({ returnAll: true }), 'getHistory', 4);
 		expect(history).toHaveLength(101);
 		expect(requestMock.mock.calls.map((call) => call[0].query.from)).toEqual([0, 100]);
+	});
+	it('uses current v2 Alert History and normalizes its empty wrapper', async () => {
+		requestMock.mockResolvedValueOnce({ total: 0, from: 0, size: 50, hits: [] });
+		expect(await executeAlert(context({ returnAll: false, limit: 50 }), 'getHistory', 5)).toEqual(
+			[],
+		);
+		expect(requestMock.mock.calls[0][0]).toMatchObject({
+			apiPathMode: 'v2',
+			pathSegments: ['alerts', 'history'],
+			query: { from: 0, size: 50 },
+		});
 	});
 	it('validates configs and node-boundary continueOnFail preserves lineage', async () => {
 		for (const queryJson of ['{}', '{"type":"sql"}', '{"type":"promql"}', '{"type":"unknown"}']) {

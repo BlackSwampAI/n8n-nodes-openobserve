@@ -277,9 +277,9 @@ live('pinned OpenObserve v0.92.2 Batch 5 alert-to-webhook lifecycle', () => {
 				'trigger',
 				0,
 			);
-			await expect(
-				executeAlert(context({ returnAll: true, historyAlertId: alertId }), 'getHistory', 0),
-			).rejects.toMatchObject({ httpCode: '404' });
+			expect(
+				await executeAlert(context({ returnAll: true, historyAlertId: alertId }), 'getHistory', 0),
+			).toEqual([]);
 		} finally {
 			try {
 				const existingAlerts = (await raw(

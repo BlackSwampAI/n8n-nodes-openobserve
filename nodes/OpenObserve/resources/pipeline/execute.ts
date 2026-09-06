@@ -22,6 +22,19 @@ const items = (values: unknown[], itemIndex: number): INodeExecutionData[] =>
 		pairedItem: { item: itemIndex },
 	}));
 
+function isMissingTriggersHistory(error: unknown): boolean {
+	if (!error || typeof error !== 'object') return false;
+	const candidate = error as {
+		httpCode?: unknown;
+		statusCode?: unknown;
+		message?: unknown;
+		description?: unknown;
+	};
+	const status = candidate.httpCode ?? candidate.statusCode;
+	const detail = `${String(candidate.message ?? '')} ${String(candidate.description ?? '')}`;
+	return String(status) === '500' && /Search stream not found:\s*triggers/i.test(detail);
+}
+
 function visibleUserPipelines(response: unknown, itemIndex: number): IDataObject[] {
 	if (
 		!response ||
@@ -184,12 +197,7 @@ export async function executePipeline(
 		return items(returnAll ? userPipelines : userPipelines.slice(0, limit), itemIndex);
 	}
 	if (operation === 'getHistory') {
-		const historyPipelineId = normalizeLocatorValue(
-			getParameter(context, 'historyPipelineId', itemIndex, ''),
-			'Pipeline',
-			itemIndex,
-			{ required: false },
-		);
+		const historyPipelineId = required(context, 'historyPipelineId', itemIndex, 'Pipeline');
 		const returnAll = getParameter(context, 'returnAll', itemIndex, false);
 		const limit = returnAll
 			? undefined
@@ -214,21 +222,28 @@ export async function executePipeline(
 			initialCursor: 0,
 			fetchPage: async (offset, remaining) => {
 				const size = Math.min(remaining ?? 1000, 1000);
-				const response = (await openObserveApiRequest.call(context, {
-					pathSegments: ['pipelines', 'history'],
-					query: {
-						...(historyPipelineId ? { pipeline_id: historyPipelineId } : {}),
-						...(start === undefined ? {} : { start_time: start }),
-						...(end === undefined ? {} : { end_time: end }),
-						from: offset,
-						size,
-						...(getParameter(context, 'sortBy', itemIndex, '').trim()
-							? { sort_by: getParameter(context, 'sortBy', itemIndex, '').trim() }
-							: {}),
-						sort_order: getParameter(context, 'sortOrder', itemIndex, 'desc'),
-					},
-					itemIndex,
-				})) as { hits?: unknown[]; total?: number };
+				const response = (await openObserveApiRequest
+					.call(context, {
+						pathSegments: ['pipelines', 'history'],
+						query: {
+							pipeline_id: historyPipelineId,
+							...(start === undefined ? {} : { start_time: start }),
+							...(end === undefined ? {} : { end_time: end }),
+							from: offset,
+							size,
+							...(getParameter(context, 'sortBy', itemIndex, '').trim()
+								? { sort_by: getParameter(context, 'sortBy', itemIndex, '').trim() }
+								: {}),
+							sort_order: getParameter(context, 'sortOrder', itemIndex, 'desc'),
+						},
+						itemIndex,
+					})
+					.catch((error: unknown) => {
+						if (isMissingTriggersHistory(error)) {
+							return { total: 0, from: offset, size, hits: [] };
+						}
+						return Promise.reject(error);
+					})) as { hits?: unknown[]; total?: number };
 				if (
 					!Array.isArray(response.hits) ||
 					!Number.isSafeInteger(response.total) ||
