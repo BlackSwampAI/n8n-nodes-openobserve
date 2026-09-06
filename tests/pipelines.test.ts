@@ -251,23 +251,54 @@ describe('Pipeline resource', () => {
 		expect(requestMock.mock.calls[1][0].query).toMatchObject({ from: 1000, size: 1000 });
 	});
 	it('returns empty history, rejects malformed history, and preserves node-boundary lineage on failure', async () => {
+		await expect(
+			executePipeline(context({ returnAll: false, limit: 50 }), 'getHistory', 3),
+		).rejects.toThrow(/Pipeline.*item 3/);
+		expect(requestMock).not.toHaveBeenCalled();
 		requestMock.mockResolvedValueOnce({ total: 0, from: 0, size: 50, hits: [] });
 		expect(
-			await executePipeline(context({ returnAll: false, limit: 50 }), 'getHistory', 3),
+			await executePipeline(
+				context({ historyPipelineId: { mode: 'list', value: 'p' }, returnAll: false, limit: 50 }),
+				'getHistory',
+				3,
+			),
 		).toEqual([]);
-		requestMock.mockResolvedValueOnce({ total: 1 });
-		await expect(executePipeline(context({ returnAll: true }), 'getHistory', 0)).rejects.toThrow(
-			/malformed/,
+		requestMock.mockRejectedValueOnce(
+			Object.assign(new Error('Failed to get pipeline history count'), {
+				httpCode: '500',
+				description: 'Search stream not found: triggers',
+			}),
 		);
+		expect(
+			await executePipeline(context({ historyPipelineId: 'p', returnAll: true }), 'getHistory', 3),
+		).toEqual([]);
+		requestMock.mockRejectedValueOnce(
+			Object.assign(new Error('unrelated internal failure'), { httpCode: '500' }),
+		);
+		await expect(
+			executePipeline(context({ historyPipelineId: 'p', returnAll: true }), 'getHistory', 3),
+		).rejects.toThrow(/unrelated/);
+		requestMock.mockRejectedValueOnce(
+			Object.assign(new Error('Failed to get pipeline history count: database unavailable'), {
+				httpCode: '500',
+			}),
+		);
+		await expect(
+			executePipeline(context({ historyPipelineId: 'p', returnAll: true }), 'getHistory', 3),
+		).rejects.toThrow(/database unavailable/);
+		requestMock.mockResolvedValueOnce({ total: 1 });
+		await expect(
+			executePipeline(context({ historyPipelineId: 'p', returnAll: true }), 'getHistory', 0),
+		).rejects.toThrow(/malformed/);
 		for (const response of [
 			{ hits: [], total: -1 },
 			{ hits: [], total: Number.MAX_SAFE_INTEGER + 1 },
 			{ hits: [] },
 		]) {
 			requestMock.mockResolvedValueOnce(response);
-			await expect(executePipeline(context({ returnAll: true }), 'getHistory', 0)).rejects.toThrow(
-				/malformed/,
-			);
+			await expect(
+				executePipeline(context({ historyPipelineId: 'p', returnAll: true }), 'getHistory', 0),
+			).rejects.toThrow(/malformed/);
 		}
 
 		requestMock.mockRejectedValueOnce(new Error('connection unavailable'));
@@ -324,7 +355,12 @@ describe('Pipeline resource', () => {
 		).rejects.toThrow(/positive/);
 		await expect(
 			executePipeline(
-				context({ returnAll: true, startTime: '2026-02-02', endTime: '2026-01-01' }),
+				context({
+					historyPipelineId: 'p',
+					returnAll: true,
+					startTime: '2026-02-02',
+					endTime: '2026-01-01',
+				}),
 				'getHistory',
 				0,
 			),

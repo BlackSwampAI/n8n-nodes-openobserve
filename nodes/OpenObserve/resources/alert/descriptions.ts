@@ -31,7 +31,7 @@ export const alertProperties: INodeProperties[] = [
 		type: 'resourceLocator',
 		default: { mode: 'list', value: 'default' },
 		required: true,
-		...show(['create', ...selected]),
+		...show(['create', 'getMany', ...selected]),
 		modes: [
 			{
 				displayName: 'From List',

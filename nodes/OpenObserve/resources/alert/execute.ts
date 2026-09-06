@@ -150,6 +150,7 @@ export async function executeAlert(
 			fetchPage: async (offset, remaining) => {
 				const size = Math.min(remaining ?? 100, 100);
 				const response = (await openObserveApiRequest.call(context, {
+					...v2,
 					pathSegments: ['alerts', 'history'],
 					query: {
 						...(alertId ? { alert_id: alertId } : {}),

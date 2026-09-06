@@ -170,6 +170,108 @@ it('keeps minimum-configuration safety metadata on side-effecting operations', (
 	expect(find('alert', 'confirmTrigger', 'trigger')).toBeDefined();
 });
 
+it('maps all 59 operations to their required user-supplied controls', () => {
+	const requiredControls: Record<string, Record<string, string[]>> = {
+		stream: {
+			getMany: [],
+			getSchema: ['streamName'],
+			updateSettings: ['streamName', 'settingsJson'],
+			deleteFields: ['streamName', 'fields'],
+			delete: ['streamName'],
+		},
+		log: { ingest: ['streamName', 'recordJson'], ingestMany: ['streamName'] },
+		search: {
+			query: ['sql', 'startTime', 'endTime'],
+			getFieldValues: ['streamName', 'fields', 'startTime', 'endTime'],
+			searchAround: ['streamName', 'aroundRecordJson'],
+		},
+		metric: {
+			instantQuery: ['promql'],
+			rangeQuery: ['promql', 'startTime', 'endTime'],
+			getMetadata: [],
+			getLabels: ['startTime', 'endTime', 'selectors'],
+			getLabelValues: ['startTime', 'endTime', 'selectors', 'labelName'],
+			findSeries: ['startTime', 'endTime', 'selectors'],
+		},
+		trace: {
+			getLatest: ['streamName', 'startTime', 'endTime'],
+			getDag: ['streamName', 'traceId'],
+		},
+		function: {
+			create: ['name', 'vrl'],
+			getMany: [],
+			getDependencies: ['functionName'],
+			update: ['functionName', 'vrl'],
+			delete: ['functionName'],
+			validate: ['vrl', 'eventsJson'],
+		},
+		dashboard: {
+			create: ['folderId', 'title'],
+			get: ['folderId', 'dashboardId'],
+			getMany: [],
+			update: ['folderId', 'dashboardId'],
+			delete: ['folderId', 'dashboardId'],
+		},
+		alertTemplate: {
+			create: ['name', 'body'],
+			get: ['templateName'],
+			getMany: [],
+			update: ['templateName'],
+			delete: ['templateName'],
+			getPrebuilt: [],
+		},
+		alertDestination: {
+			create: ['name', 'templateName', 'url'],
+			get: ['destinationName'],
+			getMany: [],
+			update: ['destinationName'],
+			delete: ['destinationName'],
+		},
+		alert: {
+			create: ['alertFolder', 'name', 'streamName', 'queryJson', 'destinations'],
+			get: ['alertFolder', 'alertId'],
+			getMany: ['alertFolder'],
+			update: ['alertFolder', 'alertId'],
+			delete: ['alertFolder', 'alertId'],
+			enable: ['alertFolder', 'alertId'],
+			disable: ['alertFolder', 'alertId'],
+			trigger: ['alertFolder', 'alertId'],
+			clone: ['alertFolder', 'alertId'],
+			getHistory: [],
+			export: ['alertFolder', 'alertId'],
+		},
+		pipeline: {
+			create: ['name', 'pipelineJson'],
+			get: ['pipelineId'],
+			getMany: [],
+			update: ['pipelineId'],
+			delete: ['pipelineId'],
+			enable: ['pipelineId'],
+			disable: ['pipelineId'],
+			getHistory: ['historyPipelineId'],
+		},
+	};
+	const properties = new OpenObserve().description.properties;
+	const entries = Object.entries(requiredControls).flatMap(([resource, operations]) =>
+		Object.entries(operations).map(([operation, controls]) => ({ resource, operation, controls })),
+	);
+	expect(entries).toHaveLength(59);
+	for (const { resource, operation, controls } of entries) {
+		for (const control of controls) {
+			const candidates = properties.filter((property) => property.name === control);
+			const property = candidates.find((candidate) => {
+				const show = candidate.displayOptions?.show;
+				return (
+					show?.resource?.includes(resource) &&
+					(!show.operation || show.operation.includes(operation))
+				);
+			});
+			expect(property, `${resource}.${operation}.${control} is visible`).toBeDefined();
+			expect(property?.required, `${resource}.${operation}.${control} is required`).toBe(true);
+		}
+	}
+});
+
 it('keeps representative editor selections focused and hides unrelated dynamic locators', () => {
 	const properties = new OpenObserve().description.properties;
 	for (const property of properties) {
