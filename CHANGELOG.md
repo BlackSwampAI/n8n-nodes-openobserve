@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3
+
+- Use the canonical Black Swamp AI package homepage.
+- Retry the official post-publication scanner only for bounded, known npm metadata or provenance-source 404 propagation states; deterministic and unrelated failures still fail immediately.
+
 ## 0.1.2
 
 - Retry the official post-publication scanner when npm has not yet exposed metadata for the exact newly published version; unrelated metadata and deterministic security failures still fail immediately.
