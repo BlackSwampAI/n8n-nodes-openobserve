@@ -146,6 +146,9 @@ if (process.env.GITHUB_REF_TYPE === 'tag') {
 
 if (!publishWorkflow.includes("- 'v*.*.*'"))
 	fail('publish workflow must trigger on v-prefixed version tags');
+if (!/timeout-minutes:\s*20/.test(ciWorkflow)) fail('CI must have a 20-minute job timeout');
+if (!/timeout-minutes:\s*30/.test(publishWorkflow))
+	fail('publish workflow must have a 30-minute job timeout');
 if (!/id-token:\s*write/.test(publishWorkflow)) fail('publish workflow needs id-token: write');
 if (!publishWorkflow.includes('npm run release')) fail('publish workflow must run npm run release');
 if (publishWorkflow.includes('secrets.NPM_TOKEN'))
