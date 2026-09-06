@@ -11,8 +11,9 @@ export function isLikelyPropagationFailure(output, packageSpec) {
 	const missingMetadata = /^Reason: No package metadata found for version (\S+)\s*$/m.exec(output);
 	return (
 		(missingMetadata !== null && missingMetadata[1] === expectedVersion) ||
-		/Analysis failed:.*(?:status code 404|E404|not found)|\b(?:E404|429|ETIMEDOUT|ECONNRESET|ENOTFOUND)\b|HTTP 404|404 Not Found|not yet available|registry propagation|failed to fetch|failed to download|provenance.*(?:missing|unavailable)/is.test(
-			output,
+		/^Reason: Analysis failed: Request failed with status code 404\s*$/m.test(output) ||
+		output.includes(
+			"Could not fetch the source repository recorded in the package's npm provenance (Request failed with status code 404)",
 		)
 	);
 }

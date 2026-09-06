@@ -48,7 +48,7 @@ describe('npm authentication preparation', () => {
 });
 
 describe('published scanner retry policy', () => {
-	const packageSpec = '@blackswampai/n8n-nodes-openobserve@0.1.2';
+	const packageSpec = '@blackswampai/n8n-nodes-openobserve@0.1.3';
 
 	it('does not retry deterministic scanner violations', () => {
 		const output = `❌ Package ${packageSpec} has failed security checks\nReason: ESLint violations found\n\nDetails:\n/source/file.ts\n  404:3 error Use NodeOperationError`;
@@ -63,7 +63,13 @@ describe('published scanner retry policy', () => {
 	});
 
 	it('retries the exact post-publish version metadata absence', () => {
-		const output = `Checking provenance for ${packageSpec}...❌ Provenance check failed for ${packageSpec}\n❌ Package ${packageSpec} has failed security checks\nReason: No package metadata found for version 0.1.2`;
+		const output = `Checking provenance for ${packageSpec}...❌ Provenance check failed for ${packageSpec}\n❌ Package ${packageSpec} has failed security checks\nReason: No package metadata found for version 0.1.3`;
+		expect(isDeterministicSecurityFailure(output, packageSpec)).toBe(false);
+		expect(isLikelyPropagationFailure(output, packageSpec)).toBe(true);
+	});
+
+	it('retries the exact transient provenance source-repository 404', () => {
+		const output = `❌ Package ${packageSpec} has failed security checks\nReason: Could not fetch the source repository recorded in the package's npm provenance (Request failed with status code 404)`;
 		expect(isDeterministicSecurityFailure(output, packageSpec)).toBe(false);
 		expect(isLikelyPropagationFailure(output, packageSpec)).toBe(true);
 	});
@@ -76,9 +82,12 @@ describe('published scanner retry policy', () => {
 
 	it('does not retry unrelated metadata failures', () => {
 		for (const reason of [
-			'Reason: Package metadata is invalid for version 0.1.2',
+			'Reason: Package metadata is invalid for version 0.1.3',
 			'Reason: No package metadata found',
 			'Reason: No package metadata found for package openobserve',
+			"Reason: Could not fetch the source repository recorded in the package's npm provenance (Request failed with status code 403)",
+			'Reason: Request failed with status code 429',
+			'Reason: ETIMEDOUT while fetching source',
 		]) {
 			const output = `Package ${packageSpec} has failed security checks\n${reason}`;
 			expect(isLikelyPropagationFailure(output, packageSpec)).toBe(false);
