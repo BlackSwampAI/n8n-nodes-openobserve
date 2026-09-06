@@ -17,6 +17,13 @@ const publishWorkflow = await readFile(
 	'utf8',
 );
 const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+const releaseCheckSource = await readFile(
+	new URL('../scripts/release-check.mjs', import.meta.url),
+	'utf8',
+);
+const templateMarker = JSON.parse(
+	await readFile(new URL('../.blackswamp/template.json', import.meta.url), 'utf8'),
+);
 
 test('package identity and runtime boundary are frozen', () => {
 	assert.equal(packageJson.name, '@blackswampai/n8n-nodes-openobserve');
@@ -32,6 +39,25 @@ test('package identity and runtime boundary are frozen', () => {
 	);
 	assert.equal(packageJson.dependencies, undefined);
 	assert.equal(packageJson.peerDependencies['n8n-workflow'], '*');
+	assert.equal(packageJson.packageManager, 'npm@11.19.0');
+	assert.deepEqual(templateMarker, {
+		schemaVersion: 1,
+		templateVersion: '2.0.0',
+		sourceRepository: 'https://github.com/christopherjnelson/n8n-community-node-template',
+	});
+});
+
+test('Template v2 adoption artifacts are present and release-audited', async () => {
+	for (const path of [
+		'.github/pull_request_template.md',
+		'docs/BATCH_HANDOFF_TEMPLATE.md',
+		'docs/TEMPLATE_MIGRATIONS.md',
+	]) {
+		await access(new URL(`../${path}`, import.meta.url));
+		assert.match(releaseCheckSource, new RegExp(path.replace(/\./g, '\\.')));
+	}
+	assert.match(releaseCheckSource, /templateMarkerPath.*is required/);
+	assert.match(releaseCheckSource, /templateMarkerPath.*must contain valid JSON/);
 });
 
 test('the OpenObserve action and trigger nodes and API credential are registered', () => {
@@ -63,9 +89,10 @@ test('release workflows are least-privilege and run complete frozen gates', () =
 	assert.match(publishWorkflow, /contents: read/);
 	assert.match(publishWorkflow, /node-version: '24'/);
 	for (const workflow of [ciWorkflow, publishWorkflow]) {
-		assert.match(workflow, /npm install --global npm@11\.16\.0/);
-		assert.ok(workflow.indexOf('npm install --global npm@11.16.0') < workflow.indexOf('npm ci'));
+		assert.match(workflow, /npm install --global npm@11\.19\.0/);
+		assert.ok(workflow.indexOf('npm install --global npm@11.19.0') < workflow.indexOf('npm ci'));
 	}
+	assert.doesNotMatch(publishWorkflow, /secrets\.NPM_TOKEN/);
 	for (const command of [
 		'npm ci',
 		'npm run release:check',

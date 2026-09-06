@@ -25,3 +25,9 @@
 - Use the scripts in `package.json` for validation. At minimum, run relevant focused checks; for completed code changes, run `npm run lint` and `npm run build` when practical.
 - Do not publish packages, create releases or tags, push commits, or open pull requests unless the user explicitly asks.
 - Follow `RELEASING.md` for any authorized release work.
+
+## Template migrations and batch handoffs
+
+- This repository records its adopted Black Swamp template version in `.blackswamp/template.json`. GitHub template repositories do not propagate later improvements automatically; review `docs/TEMPLATE_MIGRATIONS.md` before adopting a newer template revision.
+- Use `docs/BATCH_HANDOFF_TEMPLATE.md` for bounded implementation batches. Record scope, evidence, verification, safety constraints, and explicitly deferred work without turning the handoff into authorization for release or external changes.
+- Keep the final project documents `docs/api-matrix.md`, `docs/testing.md`, and `docs/branding.md` current. Do not add or retain uppercase template-source document copies in this generated repository.
