@@ -8,10 +8,10 @@ Before creating a tag:
 
 1. Make the repository public and confirm its GitHub owner, package repository URL, npm scope owner, and author identity agree.
 2. Complete the non-destructive hosted smoke using runtime-supplied least-privilege credentials; never alter/delete the existing hosted stream.
-3. Run `npm ci`, format check, lint, typecheck, full Vitest, build, `npm run package:check`, `npm run smoke:load`, `npm run smoke:install`, the pinned OSS live suites, a disposable current-n8n UI/execution smoke, and `git diff --check`.
+3. Run `npm ci`, format check, lint, typecheck, full Vitest, build, `npm run scan:source`, `npm run package:check`, `npm run smoke:load`, `npm run smoke:install`, the pinned OSS live suites, a disposable current-n8n UI/execution smoke, and `git diff --check`.
 4. Inspect the dry-run tarball: only package metadata/license/README and intended `dist` artifacts may be present.
-5. Confirm `package.json` is exactly `0.1.0`, the release commit is on `main`, CI is green, and no tag/version already exists.
-6. Only after explicit user authorization, create the immutable annotated `v0.1.0` tag at that commit and push it. The workflow validates the candidate and runs `n8n-node release` in GitHub Actions CI mode, which publishes the already-versioned package with provenance; it does not perform an interactive version bump there.
+5. Confirm the intended version in `package.json`, the release commit is on `main`, CI is green, and the npm version and matching tag do not already exist.
+6. Only after explicit user authorization, create the immutable annotated `v<package-version>` tag at that commit and push it. The workflow validates the candidate and runs `n8n-node release` in GitHub Actions CI mode, which publishes the already-versioned package with provenance; it does not perform an interactive version bump there.
 
 ## First publication only
 
@@ -21,6 +21,6 @@ After npm contains the package, configure its GitHub Actions Trusted Publisher f
 
 The workflows pin npm 11.16.0 before `npm ci` so Node.js 22 and 24 use the same lockfile semantics; Trusted Publishing itself requires npm 11.5.1 or newer. Authentication preparation retains setup-node's registry token entry only while `NPM_TOKEN` is present; after the secret is removed, it deletes only that empty placeholder from the temporary npm user config so npm can perform the OIDC exchange.
 
-The publish workflow runs `npm run scan:published` immediately after publication. Its bounded retries allow npm registry propagation, and it fails unless scanner 0.34.0 prints `Package @blackswampai/n8n-nodes-openobserve@0.1.0 has passed all security checks`. The official scanner accepts only a published npm package, verifies its provenance, and fetches the attested public GitHub source, so it cannot meaningfully validate this unpublished package before its source is public. Scanner 0.34.0 can misleadingly exit with status 0 while printing that security checks failed; verify the explicit success text rather than trusting the exit code alone. A scanner failure blocks Creator Portal submission and must not be bypassed by renaming the valid scoped package.
+Before packaging, `npm run scan:source` applies scanner 0.34.0 to its official source patterns and separately to built `dist/**/*.js` plus `package.json`. The publish workflow retains `npm run scan:published` after publication. Its bounded retries allow likely registry/source propagation failures, and it fails unless the scanner explicitly reports that the exact package name and version passed all security checks. Scanner 0.34.0 can misleadingly exit with status 0 while printing that security checks failed; verify the explicit success text rather than trusting the exit code alone. A scanner failure blocks Creator Portal submission.
 
 npm versions and published tags are immutable. Never reuse or move them.

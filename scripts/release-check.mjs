@@ -23,6 +23,7 @@ const publishWorkflow = read('.github/workflows/publish.yml');
 const ciWorkflow = read('.github/workflows/ci.yml');
 const readme = read('README.md');
 const credentialSource = read('credentials/OpenObserveApi.credentials.ts');
+const sourceScannerSource = read('scripts/scan-source.mjs');
 const scannerSource = read('scripts/scan-published.mjs');
 const iconHash = '888491dc3e61cb0b2dd069d844c92ea0098197884176e2abb9db3570d764022f';
 for (const path of [
@@ -80,8 +81,24 @@ if (packageJson.scripts?.release !== 'n8n-node release')
 if (packageJson.scripts?.prepublishOnly !== 'n8n-node prerelease') {
 	fail('prepublishOnly must use the n8n-node prerelease guard');
 }
-for (const script of ['package:check', 'smoke:load', 'smoke:install', 'scan:published']) {
+for (const script of [
+	'package:check',
+	'smoke:load',
+	'smoke:install',
+	'scan:source',
+	'scan:published',
+]) {
 	if (!packageJson.scripts?.[script]) fail(`package.json must define ${script}`);
+}
+if (packageJson.devDependencies?.['@n8n/scan-community-package'] !== '0.34.0') {
+	fail('official community-package scanner must remain pinned to 0.34.0');
+}
+if (
+	!sourceScannerSource.includes('SOURCE_FILE_PATTERNS') ||
+	!sourceScannerSource.includes("'dist/**/*.js'") ||
+	!sourceScannerSource.includes("'package.json'")
+) {
+	fail('scanner preflight must inspect official source patterns and built package artifacts');
 }
 for (const path of ['scripts/prepare-npm-auth.mjs', 'scripts/verify-npm-version.mjs']) {
 	if (!existsSync(resolve(root, path))) fail(`${path} is required`);
@@ -118,6 +135,7 @@ for (const command of [
 	'npm run typecheck',
 	'npm test',
 	'npm run build',
+	'npm run scan:source',
 	'npm run package:check',
 	'npm run smoke:load',
 	'npm run smoke:install',
@@ -142,6 +160,17 @@ for (const [name, workflow] of [
 }
 if (!publishWorkflow.includes('npm run scan:published')) {
 	fail('publish workflow must verify the published package with the official scanner');
+}
+for (const [name, workflow] of [
+	['CI', ciWorkflow],
+	['publish', publishWorkflow],
+]) {
+	const build = workflow.indexOf('npm run build');
+	const scan = workflow.indexOf('npm run scan:source');
+	const pack = workflow.indexOf('npm run package:check');
+	if (build < 0 || scan < build || pack < scan) {
+		fail(`${name} workflow must scan source and built artifacts after build and before packaging`);
+	}
 }
 for (const command of [
 	'node scripts/verify-npm-version.mjs',
