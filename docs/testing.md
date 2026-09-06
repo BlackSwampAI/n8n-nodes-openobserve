@@ -66,6 +66,8 @@ Version 0.1.2 is the current published release. The validation baseline establis
 
 `npm run scan:source` provides the official scanner 0.34.0 source and built-artifact preflight before publication. Registry provenance and attested public source can only be checked after a version exists on npm, so the tag workflow then runs `npm run scan:published` and requires the scanner's explicit success text before Creator Portal submission; scanner exit status alone is insufficient.
 
+Submit only the exact published version to Creator Portal, then visually record its card version and logo separately from tarball validation. On 2026-09-06, version 0.1.2 and the correct official logo were confirmed; no screenshot artifact was retained.
+
 On 2026-09-05, the actual packed tarball installed into a disposable `/tmp` custom-node directory beside n8n 2.37.10. The runtime started on loopback, and its authenticated type metadata contained the OpenObserve action, OpenObserve Trigger, OpenObserve API credential, and the full resource/operation controls. No user n8n home or hosted credentials were used. Before the 0.1 release line was published, the user also confirmed a real-n8n human smoke covering credentials, dynamic locators, alert creation, manual triggering, and outbound Discord delivery. No browser transcript or automated UI artifact was retained, so this is recorded as reported human evidence rather than an automated result.
 
 ### Batch 8.1 editor-performance audit

@@ -17,6 +17,8 @@
 - [ ] Build and official source/built scanner preflight pass.
 - [ ] Package boundary and compiled-registration load/install smokes pass.
 - [ ] User-visible behavior was inspected in disposable n8n where practical; limitations are stated.
+- [ ] Packed icon hashes/references and contrasting light/dark rendering were reviewed.
+- [ ] Release handoff requires the exact published version and a recorded Creator Portal card version/logo inspection.
 
 ## Safety
 
