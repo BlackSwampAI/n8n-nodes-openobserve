@@ -51,6 +51,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Run official scanner preflight
+        run: npm run scan:source
+
       - name: Validate package and release configuration
         run: npm run package:check
 

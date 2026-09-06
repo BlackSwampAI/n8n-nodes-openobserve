@@ -74,6 +74,7 @@ test('release workflows are least-privilege and run complete frozen gates', () =
 		'npm run typecheck',
 		'npm test',
 		'npm run build',
+		'npm run scan:source',
 		'npm run package:check',
 		'npm run smoke:load',
 		'npm run smoke:install',
@@ -81,6 +82,12 @@ test('release workflows are least-privilege and run complete frozen gates', () =
 		'npm run scan:published',
 	])
 		assert.match(publishWorkflow, new RegExp(command.split(' ').join('\\s+')));
+	for (const workflow of [ciWorkflow, publishWorkflow]) {
+		expect(workflow.indexOf('npm run build')).toBeLessThan(workflow.indexOf('npm run scan:source'));
+		expect(workflow.indexOf('npm run scan:source')).toBeLessThan(
+			workflow.indexOf('npm run package:check'),
+		);
+	}
 });
 
 function optionValues(options: readonly unknown[] | undefined): unknown[] {

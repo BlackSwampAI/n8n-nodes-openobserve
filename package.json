@@ -39,6 +39,7 @@
 		"package:check": "npm run release:check && node scripts/package-check.mjs",
 		"smoke:load": "node scripts/node-load-smoke.mjs",
 		"smoke:install": "node scripts/package-install-smoke.mjs",
+		"scan:source": "node scripts/scan-source.mjs",
 		"scan:published": "node scripts/scan-published.mjs",
 		"release": "n8n-node release",
 		"prepublishOnly": "n8n-node prerelease"
@@ -59,6 +60,7 @@
 	},
 	"devDependencies": {
 		"@n8n/node-cli": "0.46.4",
+		"@n8n/scan-community-package": "0.34.0",
 		"eslint": "9.32.0",
 		"prettier": "3.6.2",
 		"release-it": "20.2.0",
