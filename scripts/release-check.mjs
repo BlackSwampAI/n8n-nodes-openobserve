@@ -187,9 +187,16 @@ for (const [name, workflow] of [
 		fail(`${name} workflow must install npm 11.19.0 before npm ci`);
 	}
 }
-if (!publishWorkflow.includes('npm run scan:published')) {
-	fail('publish workflow must verify the published package with the official scanner');
-}
+const [publishJob, verifyPublishedJob = ''] = publishWorkflow.split(/\n  verify-published:\s*\n/);
+if (
+	!/needs:\s*publish/.test(verifyPublishedJob) ||
+	!verifyPublishedJob.includes('npm run scan:published')
+)
+	fail('verify-published must depend on publish and run the published scanner');
+if (publishJob.includes('npm run scan:published') || verifyPublishedJob.includes('npm run release'))
+	fail('publication and published-package verification must remain separate jobs');
+if (/id-token:\s*write/.test(verifyPublishedJob))
+	fail('verify-published must not receive id-token: write');
 for (const [name, workflow] of [
 	['CI', ciWorkflow],
 	['publish', publishWorkflow],
