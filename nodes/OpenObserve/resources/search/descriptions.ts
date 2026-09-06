@@ -70,7 +70,9 @@ export const searchProperties: INodeProperties[] = [
 		name: 'aroundRecordJson',
 		type: 'json',
 		required: true,
-		default: '{}',
+		default: '',
+		description:
+			'Required complete source record used as the search anchor, including its _timestamp value',
 		...show(['searchAround']),
 	},
 	{

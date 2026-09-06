@@ -61,9 +61,12 @@ export const alertTemplateProperties: INodeProperties[] = [
 		displayName: 'Title',
 		name: 'title',
 		type: 'string',
+		required: true,
 		default: '',
-		description: 'Email subject; optional for webhook templates',
-		...show(['create']),
+		description: 'Required email subject',
+		displayOptions: {
+			show: { resource: ['alertTemplate'], operation: ['create'], templateType: ['email'] },
+		},
 	},
 	{
 		displayName: 'Body',

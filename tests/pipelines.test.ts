@@ -52,6 +52,13 @@ describe('Pipeline resource', () => {
 			await node.methods.listSearch.searchPipelines.call({} as ILoadOptionsFunctions, 'on'),
 		).toEqual({ results: [{ name: 'One', value: 'p1' }] });
 		expect(requestMock.mock.calls[0][0].pathSegments).toEqual(['pipelines']);
+		const pipelineJson = node.description.properties.find(
+			(entry) =>
+				entry.name === 'pipelineJson' &&
+				entry.displayOptions?.show?.resource?.includes('pipeline') &&
+				entry.displayOptions.show.operation?.includes('create'),
+		);
+		expect(pipelineJson).toMatchObject({ required: true, default: '' });
 	});
 	it('creates real-time and scheduled user pipelines with friendly precedence', async () => {
 		requestMock.mockResolvedValue({ pipeline_id: 'p' });

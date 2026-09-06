@@ -114,7 +114,7 @@ export const alertProperties: INodeProperties[] = [
 		required: true,
 		default: '{"type":"custom","conditions":null}',
 		description:
-			'Verified OpenObserve query_condition object. Use type sql with sql, or type promql with promql and promql_condition.',
+			'OpenObserve query condition. The default custom condition matches the stream without a field filter; use conditions to filter, or use type sql with sql or type promql with promql and promql_condition.',
 		...show(['create']),
 	},
 	{ displayName: 'Threshold', name: 'threshold', type: 'number', default: 1, ...show(['create']) },
@@ -132,7 +132,9 @@ export const alertProperties: INodeProperties[] = [
 		type: 'number',
 		typeOptions: { minValue: 1 },
 		default: 10,
-		...show(['create']),
+		displayOptions: {
+			show: { resource: ['alert'], operation: ['create'], alertType: ['scheduled'] },
+		},
 	},
 	{
 		displayName: 'Look Back (Minutes)',
@@ -140,7 +142,9 @@ export const alertProperties: INodeProperties[] = [
 		type: 'number',
 		typeOptions: { minValue: 1 },
 		default: 10,
-		...show(['create']),
+		displayOptions: {
+			show: { resource: ['alert'], operation: ['create'], alertType: ['scheduled'] },
+		},
 	},
 	{
 		displayName: 'Cooldown (Minutes)',
@@ -157,10 +161,11 @@ export const alertProperties: INodeProperties[] = [
 		name: 'destinations',
 		type: 'multiOptions',
 		typeOptions: { loadOptionsMethod: 'getAlertDestinations' },
+		required: true,
 		default: [],
 		// eslint-disable-next-line n8n-nodes-base/node-param-description-wrong-for-dynamic-multi-options
 		description:
-			'Choose destination names from the list, or specify names using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			'Select at least one destination name, or specify names using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 		...show(['create']),
 	},
 	{

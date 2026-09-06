@@ -183,6 +183,24 @@ test('maps HTTP and connection failures to safe n8n errors', () => {
 	assert.equal(String(connection.description).includes('token-value'), false);
 });
 
+test('preserves safe HTTP response detail from Error objects', () => {
+	const upstream = Object.assign(new Error('Request failed with status code 400'), {
+		statusCode: 400,
+		response: {
+			data: { message: 'Alert destination or workflows is required' },
+			config: { headers: { Authorization: 'Basic credential-value' } },
+		},
+	});
+	const normalized = normalizeOpenObserveError(fakeNode, upstream, {
+		secrets: ['credential-value'],
+		itemIndex: 2,
+	});
+	assert.match(String(normalized.description), /Alert destination or workflows is required/);
+	assert.equal(String(normalized.description).includes('credential-value'), false);
+	assert.equal(String(normalized.description).includes('config'), false);
+	assert.equal((normalized as unknown as { context: { itemIndex: number } }).context.itemIndex, 2);
+});
+
 test('converts ISO, Date, and numeric values to safe microseconds', () => {
 	const instant = '2026-09-04T12:00:00.123Z';
 	assert.equal(toOpenObserveMicroseconds(instant), Date.parse(instant) * 1_000);
@@ -547,19 +565,23 @@ test('registers credentials and documents official icon provenance and independe
 		await readFile(new URL('../package.json', import.meta.url), 'utf8'),
 	);
 	assert.deepEqual(packageJson.n8n.credentials, ['dist/credentials/OpenObserveApi.credentials.js']);
-	const [light, dark, provenance, readme] = await Promise.all([
+	const [light, dark, triggerLight, triggerDark, provenance, readme] = await Promise.all([
 		readFile(new URL('../nodes/OpenObserve/openobserve.svg', import.meta.url), 'utf8'),
 		readFile(new URL('../nodes/OpenObserve/openobserve.dark.svg', import.meta.url), 'utf8'),
+		readFile(new URL('../nodes/OpenObserveTrigger/openobserve.svg', import.meta.url), 'utf8'),
+		readFile(new URL('../nodes/OpenObserveTrigger/openobserve.dark.svg', import.meta.url), 'utf8'),
 		readFile(new URL('../docs/logo.md', import.meta.url), 'utf8'),
 		readFile(new URL('../README.md', import.meta.url), 'utf8'),
 	]);
 	assert.equal(light, dark);
+	assert.equal(triggerLight, light);
+	assert.equal(triggerDark, light);
 	assert.equal(
 		createHash('sha256').update(light).digest('hex'),
-		'2ffba497e2be7c99358a0d46ce6886cae024b0812154e9552eec3d409c26831a',
+		'888491dc3e61cb0b2dd069d844c92ea0098197884176e2abb9db3570d764022f',
 	);
-	assert.match(provenance, /githubusercontent\.com\/openobserve\/openobserve\/8d72af70/);
-	assert.match(provenance, /mini_logo\.svg/);
+	assert.match(provenance, /githubusercontent\.com\/openobserve\/openobserve\/c651f43f/);
+	assert.match(provenance, /o2_logo\.svg/);
 	assert.match(
 		readme,
 		/not affiliated with, endorsed by, sponsored by, or maintained by OpenObserve/,

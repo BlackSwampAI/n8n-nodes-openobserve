@@ -55,6 +55,17 @@ describe('Batch 5 metadata and selectors', () => {
 		expect(operations('alertTemplate')).toHaveLength(6);
 		expect(operations('alertDestination')).toHaveLength(5);
 		expect(operations('alert')).toHaveLength(11);
+		const destinations = properties.find(
+			(property) => property.name === 'destinations' && property.type === 'multiOptions',
+		);
+		expect(destinations?.required).toBe(true);
+		for (const name of ['frequency', 'period']) {
+			const property = properties.find(
+				(candidate) =>
+					candidate.name === name && candidate.displayOptions?.show?.resource?.includes('alert'),
+			);
+			expect(property?.displayOptions?.show?.alertType).toEqual(['scheduled']);
+		}
 	});
 	it('loads template, destination, and folder-aware v2 alert selectors', async () => {
 		const load = {
@@ -108,6 +119,23 @@ describe('Batch 5 metadata and selectors', () => {
 
 describe('Alert Template operations', () => {
 	beforeEach(() => requestMock.mockReset());
+	it('requires a title only for email template creation', async () => {
+		const title = new OpenObserve().description.properties.find(
+			(property) =>
+				property.name === 'title' &&
+				property.displayOptions?.show?.resource?.includes('alertTemplate'),
+		);
+		expect(title).toMatchObject({ required: true });
+		expect(title?.displayOptions?.show?.templateType).toEqual(['email']);
+		await expect(
+			executeAlertTemplate(
+				context({ name: 'mail', templateType: 'email', title: '', body: '{}' }),
+				'create',
+				4,
+			),
+		).rejects.toThrow(/Title.*item 4/);
+		expect(requestMock).not.toHaveBeenCalled();
+	});
 	it('constructs create, get, update, delete, list, and prebuilt requests', async () => {
 		requestMock.mockResolvedValue({ code: 200 });
 		await executeAlertTemplate(
@@ -289,6 +317,54 @@ describe('Alert Destination operations', () => {
 
 describe('Alert operations', () => {
 	beforeEach(() => requestMock.mockReset());
+	it('requires a destination before sending the default real-time alert', async () => {
+		await expect(
+			executeAlert(
+				context({
+					alertFolder: { mode: 'list', value: 'default' },
+					name: 'Testing',
+					streamType: 'logs',
+					streamName: { mode: 'list', value: 'n8n' },
+					alertType: 'realtime',
+					queryJson: '{"type":"custom","conditions":null}',
+					destinations: [],
+					alertJson: '{}',
+				}),
+				'create',
+				3,
+			),
+		).rejects.toThrow(/Select at least one alert destination at item 3/);
+		expect(requestMock).not.toHaveBeenCalled();
+	});
+
+	it('sends the default custom condition with list-mode locators and one destination', async () => {
+		requestMock.mockResolvedValue({ id: 'a' });
+		await executeAlert(
+			context({
+				alertFolder: { mode: 'list', value: 'default' },
+				name: 'Testing',
+				streamType: 'logs',
+				streamName: { mode: 'list', value: 'n8n' },
+				alertType: 'realtime',
+				queryJson: '{"type":"custom","conditions":null}',
+				destinations: ['webhook'],
+				alertJson: '{}',
+			}),
+			'create',
+			0,
+		);
+		expect(requestMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				query: { folder: 'default' },
+				body: expect.objectContaining({
+					stream_name: 'n8n',
+					is_real_time: true,
+					query_condition: { type: 'custom', conditions: null },
+					destinations: ['webhook'],
+				}),
+			}),
+		);
+	});
 	it('creates scheduled/real-time alerts through current v2 with friendly fields', async () => {
 		requestMock.mockResolvedValue({ id: 'a' });
 		await executeAlert(
@@ -441,7 +517,7 @@ describe('Alert operations', () => {
 						name: 'a',
 						streamName: 's',
 						queryJson,
-						destinations: [],
+						destinations: ['d'],
 						alertJson: '{}',
 					}),
 					'create',
