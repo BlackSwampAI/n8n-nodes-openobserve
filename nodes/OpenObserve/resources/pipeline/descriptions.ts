@@ -84,21 +84,22 @@ export const pipelineProperties: INodeProperties[] = [
 		type: 'collection',
 		default: {},
 		placeholder: 'Add Field',
+		description:
+			'Friendly fields to replace; omitted fields retain their current values and Advanced Update JSON is applied first',
 		...show(['update']),
 		options: [
+			{
+				displayName: 'Advanced Update JSON',
+				name: 'pipelineJson',
+				type: 'json',
+				default: '{}',
+				description:
+					'Supplements Update Fields by merging other supported fields into the complete current definition; friendly fields win on conflicts and omitted graph fields are preserved',
+			},
 			{ displayName: 'Description', name: 'description', type: 'string', default: '' },
 			{ displayName: 'Enabled', name: 'enabled', type: 'boolean', default: true },
 			{ displayName: 'Name', name: 'name', type: 'string', default: '' },
 		],
-	},
-	{
-		displayName: 'Pipeline JSON',
-		name: 'pipelineJson',
-		type: 'json',
-		default: '{}',
-		description:
-			'Fields to merge into the complete current definition; omitted graph fields are preserved',
-		...show(['update']),
 	},
 	{
 		displayName: 'Return All',

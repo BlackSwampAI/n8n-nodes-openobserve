@@ -177,12 +177,12 @@ export const alertProperties: INodeProperties[] = [
 	},
 	{ displayName: 'Enabled', name: 'enabled', type: 'boolean', default: false, ...show(['create']) },
 	{
-		displayName: 'Alert JSON',
+		displayName: 'Advanced Alert JSON',
 		name: 'alertJson',
 		type: 'json',
 		default: '{}',
 		description:
-			'Additional supported alert fields; friendly fields take precedence. Anomaly and composite configurations are not supported.',
+			'Supplements the friendly alert fields with other supported fields; friendly fields win on conflicts. Anomaly and composite configurations are not supported.',
 		...show(['create']),
 	},
 	{
@@ -192,9 +192,17 @@ export const alertProperties: INodeProperties[] = [
 		placeholder: 'Add Field',
 		default: {},
 		description:
-			'Friendly fields to replace; omitted fields retain their current values and Update JSON is applied first',
+			'Friendly fields to replace; omitted fields retain their current values and Advanced Update JSON is applied first',
 		...show(['update']),
 		options: [
+			{
+				displayName: 'Advanced Update JSON',
+				name: 'alertJson',
+				type: 'json',
+				default: '{}',
+				description:
+					'Supplements Update Fields with other supported fields before replacement; nested query and trigger conditions are merged, friendly fields win on conflicts, and identity fields are preserved',
+			},
 			{
 				displayName: 'Check Every (Minutes)',
 				name: 'frequency',
@@ -247,15 +255,6 @@ export const alertProperties: INodeProperties[] = [
 			},
 			{ displayName: 'Threshold', name: 'threshold', type: 'number', default: 1 },
 		],
-	},
-	{
-		displayName: 'Update JSON',
-		name: 'alertJson',
-		type: 'json',
-		default: '{}',
-		description:
-			'Advanced fields to merge into the complete current alert before replacement; nested query and trigger conditions are merged, friendly fields take precedence, and identity fields are preserved',
-		...show(['update']),
 	},
 	{ displayName: 'Clone Name', name: 'cloneName', type: 'string', default: '', ...show(['clone']) },
 	{

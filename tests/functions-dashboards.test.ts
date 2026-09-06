@@ -303,8 +303,11 @@ describe('Dashboard operations', () => {
 			context({
 				dashboardId: 'id',
 				folderId: 'default',
-				updateFields: { title: 'New', description: 'Updated' },
-				dashboardJson: '{"description":"advanced"}',
+				updateFields: {
+					dashboardJson: '{"description":"advanced"}',
+					title: 'New',
+					description: 'Updated',
+				},
 			}),
 			'update',
 			4,
@@ -313,6 +316,28 @@ describe('Dashboard operations', () => {
 			title: 'New',
 			description: 'Updated',
 			tabs: [],
+		});
+		requestMock
+			.mockReset()
+			.mockResolvedValueOnce({
+				version: 8,
+				hash: 'hash-legacy',
+				v8: { version: 8, title: 'Old', description: 'Old', tabs: [] },
+			})
+			.mockResolvedValueOnce({ code: 200 });
+		await executeDashboard(
+			context({
+				dashboardId: 'id',
+				folderId: 'default',
+				updateFields: { title: 'Legacy' },
+				dashboardJson: '{"description":"legacy top-level"}',
+			}),
+			'update',
+			5,
+		);
+		expect(requestMock.mock.calls[1][0].body).toMatchObject({
+			title: 'Legacy',
+			description: 'legacy top-level',
 		});
 	});
 	it('requires update concurrency fields and delete confirmation', async () => {

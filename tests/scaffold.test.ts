@@ -138,6 +138,69 @@ test('the advertised v0.1 resource and operation matrix is complete', () => {
 	expect(Object.values(expected).flat()).toHaveLength(59);
 });
 
+test('advanced additive JSON is labeled consistently without hiding structural JSON', () => {
+	const properties = new OpenObserve().description.properties;
+	const shownFor = (property: (typeof properties)[number], resource: string, operation: string) =>
+		property.displayOptions?.show?.resource?.includes(resource) &&
+		property.displayOptions.show.operation?.includes(operation);
+	for (const [resource, parameterName] of [
+		['alert', 'alertJson'],
+		['dashboard', 'dashboardJson'],
+		['pipeline', 'pipelineJson'],
+	] as const) {
+		expect(
+			properties.find(
+				(property) => property.name === parameterName && shownFor(property, resource, 'update'),
+			),
+		).toBeUndefined();
+		const updateFields = properties.find(
+			(property) => property.name === 'updateFields' && shownFor(property, resource, 'update'),
+		);
+		expect(updateFields?.options).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					displayName: 'Advanced Update JSON',
+					name: parameterName,
+					type: 'json',
+				}),
+			]),
+		);
+	}
+	for (const [resource, parameterName, displayName] of [
+		['alert', 'alertJson', 'Advanced Alert JSON'],
+		['alertDestination', 'destinationJson', 'Advanced Destination JSON'],
+		['alertTemplate', 'templateJson', 'Advanced Template JSON'],
+		['function', 'advancedJson', 'Advanced Function JSON'],
+	] as const)
+		expect(
+			properties.find(
+				(property) => property.name === parameterName && shownFor(property, resource, 'create'),
+			)?.displayName,
+		).toBe(displayName);
+	for (const [resource, parameterName] of [
+		['alertDestination', 'destinationJson'],
+		['alertTemplate', 'templateJson'],
+	] as const)
+		expect(
+			properties.find(
+				(property) => property.name === parameterName && shownFor(property, resource, 'update'),
+			)?.displayName,
+		).toBe('Update JSON');
+	for (const [resource, parameterName, operation, displayName] of [
+		['alert', 'queryJson', 'create', 'Query JSON'],
+		['alertDestination', 'headersJson', 'create', 'Headers JSON'],
+		['dashboard', 'dashboardJson', 'create', 'Dashboard JSON'],
+		['function', 'eventsJson', 'validate', 'Sample Events JSON'],
+		['pipeline', 'pipelineJson', 'create', 'Pipeline JSON'],
+		['search', 'aroundRecordJson', 'searchAround', 'Around Record JSON'],
+	] as const)
+		expect(
+			properties.find(
+				(property) => property.name === parameterName && shownFor(property, resource, operation),
+			)?.displayName,
+		).toBe(displayName);
+});
+
 it('keeps minimum-configuration safety metadata on side-effecting operations', () => {
 	const properties = new OpenObserve().description.properties;
 	const find = (resource: string, name: string, operation: string) =>

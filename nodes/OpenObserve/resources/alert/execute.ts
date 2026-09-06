@@ -117,15 +117,18 @@ function updateBody(
 	itemIndex: number,
 	current: IDataObject,
 ): IDataObject {
-	const advanced = requireJsonObject(
-		getParameter(context, 'alertJson', itemIndex, '{}'),
-		'Update JSON',
-		itemIndex,
-	);
 	const fields = getParameter<Record<string, unknown>>(context, 'updateFields', itemIndex, {});
 	if (!fields || typeof fields !== 'object' || Array.isArray(fields))
 		throw new OpenObserveValidationError(`Fields to Update must be an object at item ${itemIndex}`);
-	if (Object.keys(advanced).length === 0 && Object.keys(fields).length === 0)
+	const advanced = requireJsonObject(
+		hasOwn(fields, 'alertJson')
+			? fields.alertJson
+			: getParameter(context, 'alertJson', itemIndex, '{}'),
+		'Advanced Update JSON',
+		itemIndex,
+	);
+	const friendlyFieldNames = Object.keys(fields).filter((key) => key !== 'alertJson');
+	if (Object.keys(advanced).length === 0 && friendlyFieldNames.length === 0)
 		throw new OpenObserveValidationError(`Add at least one field to update at item ${itemIndex}`);
 	if (advanced.alert_type === 'anomaly_detection' || advanced.alert_type === 'composite')
 		throw new OpenObserveValidationError(
@@ -153,7 +156,7 @@ function updateBody(
 			(!updateValue || typeof updateValue !== 'object' || Array.isArray(updateValue))
 		)
 			throw new OpenObserveValidationError(
-				`Update JSON ${key} must be an object at item ${itemIndex}`,
+				`Advanced Update JSON ${key} must be an object at item ${itemIndex}`,
 			);
 		return {
 			...(currentValue && typeof currentValue === 'object' && !Array.isArray(currentValue)

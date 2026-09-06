@@ -67,6 +67,7 @@ describe('Batch 5 metadata and selectors', () => {
 		expect(updateFields).toMatchObject({ type: 'collection', default: {} });
 		expect(updateFields?.displayOptions?.show?.operation).toEqual(['update']);
 		expect(updateFields?.options?.map((option) => option.name)).toEqual([
+			'alertJson',
 			'frequency',
 			'silence',
 			'description',
@@ -524,9 +525,9 @@ describe('Alert operations', () => {
 			context({
 				alertId: 'a',
 				alertFolder: 'default',
-				alertJson:
-					'{"description":"advanced","query_condition":{"sql":"SELECT advanced"},"trigger_condition":{"threshold":2}}',
 				updateFields: {
+					alertJson:
+						'{"description":"advanced","query_condition":{"sql":"SELECT advanced"},"trigger_condition":{"threshold":2}}',
 					description: '',
 					destinations: ['new-destination'],
 					queryJson: '{"sql":"SELECT friendly"}',

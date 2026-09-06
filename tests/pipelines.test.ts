@@ -140,8 +140,7 @@ describe('Pipeline resource', () => {
 		await executePipeline(
 			context({
 				pipelineId: 'p',
-				pipelineJson: '{"description":"advanced"}',
-				updateFields: { name: 'new' },
+				updateFields: { pipelineJson: '{"description":"advanced"}', name: 'new' },
 			}),
 			'update',
 			0,
@@ -160,6 +159,35 @@ describe('Pipeline resource', () => {
 		});
 		expect(update.body).not.toHaveProperty('kind');
 		expect(update.body.nodes).toEqual(graph.nodes);
+	});
+	it('retains the legacy top-level Pipeline JSON update path', async () => {
+		const current = {
+			...graph,
+			pipeline_id: 'p',
+			version: 7,
+			name: 'old',
+			description: 'keep',
+			enabled: true,
+		};
+		requestMock
+			.mockResolvedValueOnce({ list: [{ pipeline_id: 'p' }] })
+			.mockResolvedValueOnce(current)
+			.mockResolvedValueOnce({ code: 200 });
+		await executePipeline(
+			context({
+				pipelineId: 'p',
+				pipelineJson: '{"description":"legacy top-level"}',
+				updateFields: { name: 'legacy' },
+			}),
+			'update',
+			1,
+		);
+		expect(requestMock.mock.calls[2][0].body).toMatchObject({
+			pipeline_id: 'p',
+			version: 7,
+			name: 'legacy',
+			description: 'legacy top-level',
+		});
 	});
 	it('enables, disables, and confirms deletion using exact routes', async () => {
 		requestMock

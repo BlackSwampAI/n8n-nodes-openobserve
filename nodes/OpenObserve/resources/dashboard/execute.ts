@@ -27,7 +27,7 @@ const toItem = (value: unknown, itemIndex: number): INodeExecutionData => ({
 function createBody(context: IExecuteFunctions, itemIndex: number): IDataObject {
 	const advanced = requireJsonObject(
 		context.getNodeParameter('dashboardJson', itemIndex, '{}'),
-		'Dashboard JSON',
+		'Advanced Update JSON',
 		itemIndex,
 	) as IDataObject;
 	return {
@@ -41,12 +41,14 @@ function updateBody(
 	itemIndex: number,
 	current: IDataObject,
 ): IDataObject {
+	const fields = getParameter<IDataObject>(context, 'updateFields', itemIndex, {});
 	const advanced = requireJsonObject(
-		context.getNodeParameter('dashboardJson', itemIndex, '{}'),
+		Object.prototype.hasOwnProperty.call(fields, 'dashboardJson')
+			? fields.dashboardJson
+			: context.getNodeParameter('dashboardJson', itemIndex, '{}'),
 		'Dashboard JSON',
 		itemIndex,
 	) as IDataObject;
-	const fields = getParameter<IDataObject>(context, 'updateFields', itemIndex, {});
 	const result: IDataObject = {
 		...current,
 		...advanced,
