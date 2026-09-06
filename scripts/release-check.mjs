@@ -25,6 +25,28 @@ const readme = read('README.md');
 const credentialSource = read('credentials/OpenObserveApi.credentials.ts');
 const sourceScannerSource = read('scripts/scan-source.mjs');
 const scannerSource = read('scripts/scan-published.mjs');
+const templateMarkerPath = '.blackswamp/template.json';
+let templateMarker;
+if (!existsSync(resolve(root, templateMarkerPath))) {
+	fail(`${templateMarkerPath} is required`);
+} else {
+	try {
+		templateMarker = JSON.parse(read(templateMarkerPath));
+	} catch {
+		fail(`${templateMarkerPath} must contain valid JSON`);
+	}
+}
+const finalDocumentation = ['docs/api-matrix.md', 'docs/testing.md', 'docs/branding.md'];
+const adoptedBaselineArtifacts = [
+	'.github/pull_request_template.md',
+	'docs/BATCH_HANDOFF_TEMPLATE.md',
+	'docs/TEMPLATE_MIGRATIONS.md',
+];
+const templateDocumentation = [
+	'docs/API_MATRIX_TEMPLATE.md',
+	'docs/TESTING_TEMPLATE.md',
+	'docs/BRANDING_TEMPLATE.md',
+];
 const iconHash = '888491dc3e61cb0b2dd069d844c92ea0098197884176e2abb9db3570d764022f';
 for (const path of [
 	'nodes/OpenObserve/openobserve.svg',
@@ -70,6 +92,7 @@ if (!packageJson.n8n?.nodes?.length)
 if (packageJson.publishConfig?.access !== 'public') fail('publishConfig.access must be public');
 if (packageJson.engines?.node !== '>=22.22.0')
 	fail('engines.node must match the current >=22.22.0 baseline');
+if (packageJson.packageManager !== 'npm@11.19.0') fail('packageManager must pin npm@11.19.0');
 if (packageJson.devDependencies?.['@n8n/node-cli'] !== '0.46.4')
 	fail('@n8n/node-cli must match the reviewed 0.46.4 release baseline');
 if (packageJson.author?.name !== 'Christopher J. Nelson')
@@ -123,11 +146,13 @@ if (process.env.GITHUB_REF_TYPE === 'tag') {
 
 if (!publishWorkflow.includes("- 'v*.*.*'"))
 	fail('publish workflow must trigger on v-prefixed version tags');
+if (!/timeout-minutes:\s*20/.test(ciWorkflow)) fail('CI must have a 20-minute job timeout');
+if (!/timeout-minutes:\s*30/.test(publishWorkflow))
+	fail('publish workflow must have a 30-minute job timeout');
 if (!/id-token:\s*write/.test(publishWorkflow)) fail('publish workflow needs id-token: write');
 if (!publishWorkflow.includes('npm run release')) fail('publish workflow must run npm run release');
-if (!publishWorkflow.includes('secrets.NPM_TOKEN')) {
-	fail('publish workflow must retain the first-publication NPM_TOKEN fallback');
-}
+if (publishWorkflow.includes('secrets.NPM_TOKEN'))
+	fail('established package publishing must use Trusted Publisher OIDC without NPM_TOKEN');
 for (const command of [
 	'npm ci',
 	'npm run format:check',
@@ -152,10 +177,10 @@ for (const [name, workflow] of [
 	['CI', ciWorkflow],
 	['publish', publishWorkflow],
 ]) {
-	const npmPin = workflow.indexOf('npm install --global npm@11.16.0');
+	const npmPin = workflow.indexOf('npm install --global npm@11.19.0');
 	const frozenInstall = workflow.indexOf('npm ci');
 	if (npmPin < 0 || frozenInstall < 0 || npmPin > frozenInstall) {
-		fail(`${name} workflow must install npm 11.16.0 before npm ci`);
+		fail(`${name} workflow must install npm 11.19.0 before npm ci`);
 	}
 }
 if (!publishWorkflow.includes('npm run scan:published')) {
@@ -189,6 +214,42 @@ for (const heading of [
 	if (!readme.includes(heading)) fail(`README is missing ${heading}`);
 }
 if (hasPlaceholder(readme)) fail('README still contains a placeholder');
+
+if (
+	templateMarker !== undefined &&
+	(templateMarker?.schemaVersion !== 1 ||
+		templateMarker?.templateVersion !== '2.0.0' ||
+		templateMarker?.sourceRepository !==
+			'https://github.com/christopherjnelson/n8n-community-node-template')
+) {
+	fail(`${templateMarkerPath} must identify the adopted canonical Template v2 baseline`);
+}
+for (const path of adoptedBaselineArtifacts) {
+	if (!existsSync(resolve(root, path))) fail(`${path} is required`);
+}
+for (const path of finalDocumentation) {
+	if (!existsSync(resolve(root, path))) {
+		fail(`${path} is required`);
+		continue;
+	}
+	if (/<[A-Z][A-Z0-9_-]*(?: [A-Z0-9_-]+)*>/.test(read(path))) {
+		fail(`${path} contains an unresolved uppercase template placeholder`);
+	}
+}
+for (const path of templateDocumentation) {
+	if (existsSync(resolve(root, path))) fail(`${path} must not remain in a generated repository`);
+}
+for (const [path, content] of [
+	['README.md', readme],
+	['RELEASING.md', read('RELEASING.md')],
+	['docs/testing.md', read('docs/testing.md')],
+]) {
+	if (
+		/release candidate|has not been published|not yet published|unpublished package/i.test(content)
+	) {
+		fail(`${path} contains stale pre-release wording`);
+	}
+}
 
 for (const path of ['LICENSE.md', 'CHANGELOG.md', 'RELEASING.md']) {
 	if (!existsSync(resolve(root, path))) fail(`${path} is required`);

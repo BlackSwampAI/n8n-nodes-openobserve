@@ -83,9 +83,10 @@ The Alert Triggered node creates one deterministic template and webhook destinat
 - [v0.1 minimum-configuration UX audit](docs/ux-requirements-audit.md)
 - [Architecture and safety decisions](docs/architecture.md)
 - [Validation record and local test procedure](docs/testing.md)
+- [Branding and icon provenance](docs/branding.md)
 - [Release process](RELEASING.md)
 
-The packaged light and dark icons use the unmodified official OpenObserve product glyph from [`openobserve/openobserve` commit `c651f43f29c864478f5107612622a5e20492ea39`](https://github.com/openobserve/openobserve/blob/c651f43f29c864478f5107612622a5e20492ea39/web/src/assets/images/common/o2_logo.svg). Use of that mark does not imply affiliation, sponsorship, endorsement, or maintenance. See [logo provenance](docs/logo.md).
+The packaged light and dark icons use the unmodified official OpenObserve product glyph from [`openobserve/openobserve` commit `c651f43f29c864478f5107612622a5e20492ea39`](https://github.com/openobserve/openobserve/blob/c651f43f29c864478f5107612622a5e20492ea39/web/src/assets/images/common/o2_logo.svg). Use of that mark does not imply affiliation, sponsorship, endorsement, or maintenance. See [branding and icon provenance](docs/branding.md).
 
 ## Development
 

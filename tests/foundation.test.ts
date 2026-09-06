@@ -570,7 +570,7 @@ test('registers credentials and documents official icon provenance and independe
 		readFile(new URL('../nodes/OpenObserve/openobserve.dark.svg', import.meta.url), 'utf8'),
 		readFile(new URL('../nodes/OpenObserveTrigger/openobserve.svg', import.meta.url), 'utf8'),
 		readFile(new URL('../nodes/OpenObserveTrigger/openobserve.dark.svg', import.meta.url), 'utf8'),
-		readFile(new URL('../docs/logo.md', import.meta.url), 'utf8'),
+		readFile(new URL('../docs/branding.md', import.meta.url), 'utf8'),
 		readFile(new URL('../README.md', import.meta.url), 'utf8'),
 	]);
 	assert.equal(light, dark);
