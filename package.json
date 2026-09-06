@@ -1,6 +1,6 @@
 {
 	"name": "@blackswampai/n8n-nodes-openobserve",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Independent n8n community integration for OpenObserve",
 	"license": "MIT",
 	"homepage": "https://github.com/BlackSwampAI/n8n-nodes-openobserve#readme",

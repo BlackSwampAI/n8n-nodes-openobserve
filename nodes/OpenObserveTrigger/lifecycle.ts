@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { IDataObject, IHookFunctions } from 'n8n-workflow';
-import { NodeOperationError } from 'n8n-workflow';
+import { NodeOperationError, sleep } from 'n8n-workflow';
 import { openObserveApiRequest } from '../OpenObserve/shared/transport';
 
 export interface TriggerState extends IDataObject {
@@ -26,10 +26,16 @@ const OWNED_TEMPLATE_BODY = JSON.stringify({
 	operator: '{alert_operator}',
 	alertUrl: '{alert_url}',
 });
-const delay = async (milliseconds: number): Promise<void> =>
-	// Bounded lifecycle confirmation polling; no background work escapes the hook.
-	// eslint-disable-next-line @n8n/community-nodes/no-restricted-globals
-	await new Promise((resolve) => setTimeout(resolve, milliseconds));
+const delay = async (milliseconds: number): Promise<void> => await sleep(milliseconds);
+
+function lifecycleError(
+	context: IHookFunctions,
+	error: unknown,
+	prefix?: string,
+): NodeOperationError {
+	const detail = error instanceof Error ? error.message : 'Unknown OpenObserve lifecycle error';
+	return new NodeOperationError(context.getNode(), prefix ? `${prefix}: ${detail}` : detail);
+}
 
 export function ownershipNames(workflowId: string, nodeId: string) {
 	const digest = createHash('sha256').update(`${workflowId}:${nodeId}`).digest('hex').slice(0, 24);
@@ -67,9 +73,7 @@ async function getOptional(
 		return (await openObserveApiRequest.call(context, { pathSegments })) as Record<string, unknown>;
 	} catch (error) {
 		if (isNotFound(error)) return undefined;
-		// Transport has already normalized and redacted this n8n error.
-		// eslint-disable-next-line @n8n/community-nodes/require-node-api-error
-		throw error;
+		throw lifecycleError(context, error);
 	}
 }
 
@@ -277,13 +281,12 @@ export async function activateTrigger(
 				rollbackFailures += 1;
 			}
 		if (rollbackFailures)
-			throw new NodeOperationError(
-				context.getNode(),
+			throw lifecycleError(
+				context,
+				error,
 				`Trigger activation failed; rollback also failed in ${rollbackFailures} step(s)`,
 			);
-		// Preserve the already-normalized primary error after best-effort rollback.
-		// eslint-disable-next-line @n8n/community-nodes/require-node-api-error
-		throw error;
+		throw lifecycleError(context, error);
 	}
 }
 

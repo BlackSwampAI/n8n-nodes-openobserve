@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Align dynamic alert destination controls and lifecycle error handling with the official n8n community-package scanner.
+- Replace restricted trigger polling primitives and harden post-publication scanner retry behavior.
+
 ## 0.1.0
 
 - Harden the 0.1.0 documentation, least-privilege CI/publish gates, package/runtime validation, and first-publication checklist.

@@ -155,17 +155,14 @@ export const alertProperties: INodeProperties[] = [
 		...show(['create']),
 	},
 	{
-		// OpenObserve destination references are names, despite the generic dynamic-multi-options lint wording.
-		// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-multi-options
-		displayName: 'Destinations',
+		displayName: 'Destination Names or IDs',
 		name: 'destinations',
 		type: 'multiOptions',
 		typeOptions: { loadOptionsMethod: 'getAlertDestinations' },
 		required: true,
 		default: [],
-		// eslint-disable-next-line n8n-nodes-base/node-param-description-wrong-for-dynamic-multi-options
 		description:
-			'Select at least one destination name, or specify names using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 		...show(['create']),
 	},
 	{
@@ -220,15 +217,13 @@ export const alertProperties: INodeProperties[] = [
 				description: 'May be left empty to clear the current description',
 			},
 			{
-				// OpenObserve destination references are names, despite the generic dynamic-multi-options lint wording.
-				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-multi-options
-				displayName: 'Destinations',
+				displayName: 'Destination Names or IDs',
 				name: 'destinations',
 				type: 'multiOptions',
 				typeOptions: { loadOptionsMethod: 'getAlertDestinations' },
 				default: [],
-				// eslint-disable-next-line n8n-nodes-base/node-param-description-wrong-for-dynamic-multi-options
-				description: 'Replaces the complete destination-name list; select at least one destination',
+				description:
+					'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 			},
 			{
 				displayName: 'Look Back (Minutes)',

@@ -4,7 +4,6 @@ import { normalizeLocatorValue } from '../../shared/locator';
 import { requirePositiveSafeInteger } from '../../shared/numbers';
 import { openObserveApiRequest } from '../../shared/transport';
 import { OpenObserveValidationError } from '../../shared/validation-error';
-/* eslint-disable @n8n/community-nodes/require-node-api-error -- Item-aware validation errors are normalized at the node boundary. */
 const getParameter = <T>(
 	context: IExecuteFunctions,
 	name: string,
@@ -26,6 +25,11 @@ function safeDestination(value: unknown): IDataObject {
 		);
 	return copy as IDataObject;
 }
+function invalidDestinationUrl(itemIndex: number): never {
+	throw new OpenObserveValidationError(
+		`URL must be a valid HTTP or HTTPS URL at item ${itemIndex}`,
+	);
+}
 const one = (value: unknown, itemIndex: number): INodeExecutionData[] => [
 	{ json: safeDestination(value), pairedItem: { item: itemIndex } },
 ];
@@ -34,9 +38,7 @@ function validateUrl(value: string, itemIndex: number): string {
 	try {
 		parsed = new URL(value);
 	} catch {
-		throw new OpenObserveValidationError(
-			`URL must be a valid HTTP or HTTPS URL at item ${itemIndex}`,
-		);
+		return invalidDestinationUrl(itemIndex);
 	}
 	if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password)
 		throw new OpenObserveValidationError(
