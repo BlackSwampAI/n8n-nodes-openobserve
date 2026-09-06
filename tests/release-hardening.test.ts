@@ -48,17 +48,41 @@ describe('npm authentication preparation', () => {
 });
 
 describe('published scanner retry policy', () => {
-	const packageSpec = '@blackswampai/n8n-nodes-openobserve@0.1.1';
+	const packageSpec = '@blackswampai/n8n-nodes-openobserve@0.1.2';
 
 	it('does not retry deterministic scanner violations', () => {
 		const output = `❌ Package ${packageSpec} has failed security checks\nReason: ESLint violations found\n\nDetails:\n/source/file.ts\n  404:3 error Use NodeOperationError`;
 		expect(isDeterministicSecurityFailure(output, packageSpec)).toBe(true);
-		expect(isLikelyPropagationFailure(output)).toBe(false);
+		expect(isLikelyPropagationFailure(output, packageSpec)).toBe(false);
 	});
 
 	it('retries the observed first-publication analysis 404', () => {
 		const output = `❌ Package ${packageSpec} has failed security checks\nReason: Analysis failed: Request failed with status code 404`;
 		expect(isDeterministicSecurityFailure(output, packageSpec)).toBe(false);
-		expect(isLikelyPropagationFailure(output)).toBe(true);
+		expect(isLikelyPropagationFailure(output, packageSpec)).toBe(true);
+	});
+
+	it('retries the exact post-publish version metadata absence', () => {
+		const output = `Checking provenance for ${packageSpec}...❌ Provenance check failed for ${packageSpec}\n❌ Package ${packageSpec} has failed security checks\nReason: No package metadata found for version 0.1.2`;
+		expect(isDeterministicSecurityFailure(output, packageSpec)).toBe(false);
+		expect(isLikelyPropagationFailure(output, packageSpec)).toBe(true);
+	});
+
+	it('does not retry metadata absence for a different version', () => {
+		const output = `Package ${packageSpec} has failed security checks\nReason: No package metadata found for version 0.1.1`;
+		expect(isLikelyPropagationFailure(output, packageSpec)).toBe(false);
+		expect(isDeterministicSecurityFailure(output, packageSpec)).toBe(true);
+	});
+
+	it('does not retry unrelated metadata failures', () => {
+		for (const reason of [
+			'Reason: Package metadata is invalid for version 0.1.2',
+			'Reason: No package metadata found',
+			'Reason: No package metadata found for package openobserve',
+		]) {
+			const output = `Package ${packageSpec} has failed security checks\n${reason}`;
+			expect(isLikelyPropagationFailure(output, packageSpec)).toBe(false);
+			expect(isDeterministicSecurityFailure(output, packageSpec)).toBe(true);
+		}
 	});
 });

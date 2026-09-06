@@ -21,7 +21,7 @@ for (let attempt = 1; attempt <= attempts; attempt += 1) {
 		console.error(`Official scanner reported a deterministic security failure for ${packageSpec}.`);
 		process.exit(1);
 	}
-	if (!isLikelyPropagationFailure(output)) {
+	if (!isLikelyPropagationFailure(output, packageSpec)) {
 		console.error(
 			`Official scanner failed without a retryable propagation error for ${packageSpec}.`,
 		);

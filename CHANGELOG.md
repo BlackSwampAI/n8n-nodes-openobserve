@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Retry the official post-publication scanner when npm has not yet exposed metadata for the exact newly published version; unrelated metadata and deterministic security failures still fail immediately.
+
 ## 0.1.1
 
 - Align dynamic alert destination controls and lifecycle error handling with the official n8n community-package scanner.
