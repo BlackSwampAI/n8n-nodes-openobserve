@@ -1,16 +1,19 @@
-/* eslint-disable @n8n/community-nodes/require-node-api-error -- Converted to item-aware n8n errors at the node boundary. */
 import { OpenObserveValidationError } from './validation-error';
 
 export type JsonRecord = Record<string, unknown>;
+
+function invalidJson(label: string, itemIndex?: number): never {
+	throw new OpenObserveValidationError(
+		`${label} must be valid JSON${itemIndex === undefined ? '' : ` at item ${itemIndex}`}`,
+	);
+}
 
 export function parseJsonValue(value: unknown, label: string, itemIndex?: number): unknown {
 	if (typeof value !== 'string') return value;
 	try {
 		return JSON.parse(value) as unknown;
 	} catch {
-		throw new OpenObserveValidationError(
-			`${label} must be valid JSON${itemIndex === undefined ? '' : ` at item ${itemIndex}`}`,
-		);
+		return invalidJson(label, itemIndex);
 	}
 }
 

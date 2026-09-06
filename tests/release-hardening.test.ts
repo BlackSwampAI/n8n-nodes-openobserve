@@ -7,6 +7,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { prepareNpmAuth } from '../scripts/prepare-npm-auth.mjs';
+import {
+	isDeterministicSecurityFailure,
+	isLikelyPropagationFailure,
+} from '../scripts/scan-policy.mjs';
 
 const temporaryDirectories: string[] = [];
 afterEach(() => {
@@ -40,5 +44,21 @@ describe('npm authentication preparation', () => {
 		expect(readFileSync(config, 'utf8')).toBe(
 			'registry=https://registry.npmjs.org/\nprovenance=true\n',
 		);
+	});
+});
+
+describe('published scanner retry policy', () => {
+	const packageSpec = '@blackswampai/n8n-nodes-openobserve@0.1.1';
+
+	it('does not retry deterministic scanner violations', () => {
+		const output = `❌ Package ${packageSpec} has failed security checks\nReason: ESLint violations found\n\nDetails:\n/source/file.ts\n  404:3 error Use NodeOperationError`;
+		expect(isDeterministicSecurityFailure(output, packageSpec)).toBe(true);
+		expect(isLikelyPropagationFailure(output)).toBe(false);
+	});
+
+	it('retries the observed first-publication analysis 404', () => {
+		const output = `❌ Package ${packageSpec} has failed security checks\nReason: Analysis failed: Request failed with status code 404`;
+		expect(isDeterministicSecurityFailure(output, packageSpec)).toBe(false);
+		expect(isLikelyPropagationFailure(output)).toBe(true);
 	});
 });

@@ -14,6 +14,7 @@
 		"credentials/**/*",
 		"nodes/**/*",
 		"scripts/prepare-npm-auth.mjs",
+		"scripts/scan-policy.mjs",
 		"tests/**/*",
 		"vitest.config.mts"
 	]
