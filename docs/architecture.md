@@ -48,7 +48,8 @@ This repository is an independent MIT-licensed API integration and is not affili
 7. **Edition-aware, capability-tested behavior.** A route in Cloud Swagger is not evidence that it works in OSS. Enterprise-aware features are deferred unless clearly gated.
 8. **No release claims during discovery.** The shell exists only to keep the package scaffold buildable; README and changelog state that it is not yet functional or released.
 9. **Dashboard updates preserve server state.** The node fetches the current versioned definition and conflict hash, then merges advanced JSON followed by explicitly selected friendly update fields. Omitted title and description remain unchanged; advanced JSON is the explicit escape hatch for broader changes. Dashboard selectors are scoped to the selected folder. Panel CRUD remains deferred because its tab/panel schema and conflict semantics warrant a separate UX design.
-10. **Functions are VRL-only.** Create, Update, and Validate always send transformation type `0`, after advanced JSON is merged, so the node cannot silently switch to another transformation language.
+10. **Alert updates preserve the complete definition.** The v2 API replaces an alert rather than patching it. Update therefore fetches the current alert, deliberately merges nested query and trigger conditions, applies only explicitly selected friendly fields after advanced JSON, and preserves server identity/version fields. Friendly fields do not expose name, alert-type, stream, or folder changes; advanced JSON cannot rename or convert the alert type. Enable/Disable remain separate operations. Scheduled frequency/look-back fields are rejected for real-time alerts.
+11. **Functions are VRL-only.** Create, Update, and Validate always send transformation type `0`, after advanced JSON is merged, so the node cannot silently switch to another transformation language.
 
 ## Batch boundaries
 

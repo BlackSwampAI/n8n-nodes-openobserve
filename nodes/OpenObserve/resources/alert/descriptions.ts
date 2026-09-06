@@ -186,12 +186,75 @@ export const alertProperties: INodeProperties[] = [
 		...show(['create']),
 	},
 	{
+		displayName: 'Update Fields',
+		name: 'updateFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		description:
+			'Friendly fields to replace; omitted fields retain their current values and Update JSON is applied first',
+		...show(['update']),
+		options: [
+			{
+				displayName: 'Check Every (Minutes)',
+				name: 'frequency',
+				type: 'number',
+				typeOptions: { minValue: 1 },
+				default: 10,
+				description: 'Scheduled alerts only',
+			},
+			{ displayName: 'Cooldown (Minutes)', name: 'silence', type: 'number', default: 10 },
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				description: 'May be left empty to clear the current description',
+			},
+			{
+				// OpenObserve destination references are names, despite the generic dynamic-multi-options lint wording.
+				// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-multi-options
+				displayName: 'Destinations',
+				name: 'destinations',
+				type: 'multiOptions',
+				typeOptions: { loadOptionsMethod: 'getAlertDestinations' },
+				default: [],
+				// eslint-disable-next-line n8n-nodes-base/node-param-description-wrong-for-dynamic-multi-options
+				description: 'Replaces the complete destination-name list; select at least one destination',
+			},
+			{
+				displayName: 'Look Back (Minutes)',
+				name: 'period',
+				type: 'number',
+				typeOptions: { minValue: 1 },
+				default: 10,
+				description: 'Scheduled alerts only',
+			},
+			{
+				displayName: 'Operator',
+				name: 'operator',
+				type: 'options',
+				default: '>=',
+				options: ['=', '!=', '>', '>=', '<', '<='].map((value) => ({ name: value, value })),
+			},
+			{
+				displayName: 'Query JSON',
+				name: 'queryJson',
+				type: 'json',
+				default: '{}',
+				description:
+					'Fields to merge into the current query condition; include type when changing query mode',
+			},
+			{ displayName: 'Threshold', name: 'threshold', type: 'number', default: 1 },
+		],
+	},
+	{
 		displayName: 'Update JSON',
 		name: 'alertJson',
 		type: 'json',
 		default: '{}',
 		description:
-			'Fields to merge into the complete current alert before replacement; ID and organization fields are preserved',
+			'Advanced fields to merge into the complete current alert before replacement; nested query and trigger conditions are merged, friendly fields take precedence, and identity fields are preserved',
 		...show(['update']),
 	},
 	{ displayName: 'Clone Name', name: 'cloneName', type: 'string', default: '', ...show(['clone']) },

@@ -59,6 +59,23 @@ describe('Batch 5 metadata and selectors', () => {
 			(property) => property.name === 'destinations' && property.type === 'multiOptions',
 		);
 		expect(destinations?.required).toBe(true);
+		const updateFields = properties.find(
+			(property) =>
+				property.name === 'updateFields' &&
+				property.displayOptions?.show?.resource?.includes('alert'),
+		);
+		expect(updateFields).toMatchObject({ type: 'collection', default: {} });
+		expect(updateFields?.displayOptions?.show?.operation).toEqual(['update']);
+		expect(updateFields?.options?.map((option) => option.name)).toEqual([
+			'frequency',
+			'silence',
+			'description',
+			'destinations',
+			'period',
+			'operator',
+			'queryJson',
+			'threshold',
+		]);
 		for (const name of ['frequency', 'period']) {
 			const property = properties.find(
 				(candidate) =>
@@ -481,6 +498,140 @@ describe('Alert operations', () => {
 		});
 		await executeAlert(context({ ...selected, confirmDestructive: true }), 'delete', 0);
 		expect(requestMock.mock.calls[7][0].method).toBe('DELETE');
+	});
+	it('merges friendly update fields after nested advanced fields and preserves identity', async () => {
+		requestMock
+			.mockResolvedValueOnce({
+				id: 'a',
+				org_id: 'default',
+				version: 7,
+				name: 'old',
+				description: 'old description',
+				is_real_time: false,
+				query_condition: { type: 'sql', sql: 'SELECT old', aggregation: 'count' },
+				trigger_condition: {
+					period: 10,
+					frequency: 5,
+					threshold: 1,
+					operator: '>=',
+					silence: 10,
+					frequency_type: 'minutes',
+				},
+				destinations: ['old-destination'],
+			})
+			.mockResolvedValueOnce({ code: 200 });
+		await executeAlert(
+			context({
+				alertId: 'a',
+				alertFolder: 'default',
+				alertJson:
+					'{"description":"advanced","query_condition":{"sql":"SELECT advanced"},"trigger_condition":{"threshold":2}}',
+				updateFields: {
+					description: '',
+					destinations: ['new-destination'],
+					queryJson: '{"sql":"SELECT friendly"}',
+					threshold: 3,
+					operator: '<',
+					silence: 0,
+					frequency: 15,
+					period: 20,
+				},
+			}),
+			'update',
+			2,
+		);
+		expect(requestMock.mock.calls[1][0].body).toEqual(
+			expect.objectContaining({
+				id: 'a',
+				org_id: 'default',
+				version: 7,
+				name: 'old',
+				description: '',
+				destinations: ['new-destination'],
+				query_condition: {
+					type: 'sql',
+					sql: 'SELECT friendly',
+					aggregation: 'count',
+				},
+				trigger_condition: {
+					period: 20,
+					frequency: 15,
+					threshold: 3,
+					operator: '<',
+					silence: 0,
+					frequency_type: 'minutes',
+				},
+			}),
+		);
+	});
+	it('rejects empty, unchanged, unsafe, and invalid friendly updates before PUT', async () => {
+		const current = {
+			id: 'a',
+			org_id: 'default',
+			name: 'old',
+			description: 'old description',
+			is_real_time: false,
+			query_condition: { type: 'custom', conditions: null },
+			trigger_condition: { period: 10, frequency: 5, threshold: 1 },
+		};
+		for (const parameters of [
+			{ alertJson: '{}', updateFields: {} },
+			{ alertJson: '{}', updateFields: { description: 'old description' } },
+			{ alertJson: '{"name":"renamed"}', updateFields: {} },
+			{ alertJson: '{}', updateFields: { destinations: [] } },
+			{ alertJson: '{}', updateFields: { destinations: ['valid', ''] } },
+			{ alertJson: '{}', updateFields: { queryJson: '{"type":"sql"}' } },
+			{ alertJson: '{"is_real_time":true}', updateFields: {} },
+			{ alertJson: '{"alert_type":"realtime"}', updateFields: {} },
+		]) {
+			requestMock.mockReset().mockResolvedValueOnce(current);
+			await expect(
+				executeAlert(context({ alertId: 'a', alertFolder: 'default', ...parameters }), 'update', 3),
+			).rejects.toThrow(/item 3/);
+			expect(requestMock).toHaveBeenCalledTimes(1);
+		}
+	});
+	it('rejects scheduled-only update fields for real-time alerts', async () => {
+		requestMock.mockResolvedValueOnce({
+			id: 'a',
+			org_id: 'default',
+			name: 'real-time',
+			is_real_time: false,
+			alert_type: 'realtime',
+			trigger_condition: { threshold: 1 },
+		});
+		await expect(
+			executeAlert(
+				context({
+					alertId: 'a',
+					alertFolder: 'default',
+					alertJson: '{}',
+					updateFields: { frequency: 5 },
+				}),
+				'update',
+				4,
+			),
+		).rejects.toThrow(/scheduled alerts.*item 4/);
+		expect(requestMock).toHaveBeenCalledTimes(1);
+	});
+	it('propagates a server failure from the full replacement request', async () => {
+		const serverError = new Error('OpenObserve rejected the alert update');
+		requestMock
+			.mockResolvedValueOnce({ id: 'a', org_id: 'default', name: 'old', is_real_time: false })
+			.mockRejectedValueOnce(serverError);
+		await expect(
+			executeAlert(
+				context({
+					alertId: 'a',
+					alertFolder: 'default',
+					alertJson: '{}',
+					updateFields: { description: 'new' },
+				}),
+				'update',
+				5,
+			),
+		).rejects.toBe(serverError);
+		expect(requestMock).toHaveBeenCalledTimes(2);
 	});
 	it('manually triggers only after explicit confirmation', async () => {
 		await expect(
