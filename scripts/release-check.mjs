@@ -130,6 +130,16 @@ if (!/contents:\s*read/.test(publishWorkflow) || !/contents:\s*read/.test(ciWork
 if (!publishWorkflow.includes("node-version: '24'")) {
 	fail('publish workflow must use Node.js 24');
 }
+for (const [name, workflow] of [
+	['CI', ciWorkflow],
+	['publish', publishWorkflow],
+]) {
+	const npmPin = workflow.indexOf('npm install --global npm@11.16.0');
+	const frozenInstall = workflow.indexOf('npm ci');
+	if (npmPin < 0 || frozenInstall < 0 || npmPin > frozenInstall) {
+		fail(`${name} workflow must install npm 11.16.0 before npm ci`);
+	}
+}
 if (!publishWorkflow.includes('npm run scan:published')) {
 	fail('publish workflow must verify the published package with the official scanner');
 }

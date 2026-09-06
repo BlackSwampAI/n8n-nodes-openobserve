@@ -62,6 +62,10 @@ test('release workflows are least-privilege and run complete frozen gates', () =
 	assert.match(publishWorkflow, /id-token: write/);
 	assert.match(publishWorkflow, /contents: read/);
 	assert.match(publishWorkflow, /node-version: '24'/);
+	for (const workflow of [ciWorkflow, publishWorkflow]) {
+		assert.match(workflow, /npm install --global npm@11\.16\.0/);
+		assert.ok(workflow.indexOf('npm install --global npm@11.16.0') < workflow.indexOf('npm ci'));
+	}
 	for (const command of [
 		'npm ci',
 		'npm run release:check',
