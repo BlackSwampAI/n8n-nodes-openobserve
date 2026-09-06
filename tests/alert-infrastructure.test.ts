@@ -82,7 +82,13 @@ describe('Batch 5 metadata and selectors', () => {
 			})
 			.mockResolvedValueOnce([{ name: 'template-a' }])
 			.mockResolvedValueOnce([{ name: 'destination-a' }])
-			.mockResolvedValueOnce({ list: [{ id: 'id-a', name: 'alert-a' }] });
+			.mockResolvedValueOnce({
+				list: [
+					{ alert_id: 'alert-id-field', name: 'alert-id-name' },
+					{ id: 'id-field', name: 'id-name' },
+					{ name: 'missing-id' },
+				],
+			});
 		expect(
 			(await new OpenObserve().methods.listSearch.searchAlertFolders.call(load, '')).results,
 		).toEqual([
@@ -97,7 +103,10 @@ describe('Batch 5 metadata and selectors', () => {
 		).toEqual([{ name: 'destination-a', value: 'destination-a' }]);
 		expect(
 			(await new OpenObserve().methods.listSearch.searchAlerts.call(load, 'alert')).results,
-		).toEqual([{ name: 'alert-a', value: 'id-a' }]);
+		).toEqual([
+			{ name: 'alert-id-name', value: 'alert-id-field' },
+			{ name: 'id-name', value: 'id-field' },
+		]);
 		expect(requestMock.mock.calls[3][0]).toMatchObject({
 			apiPathMode: 'v2',
 			query: { folder: 'ops', page_size: 100, page_idx: 0, alert_name_substring: 'alert' },
