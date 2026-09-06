@@ -78,7 +78,7 @@ The Alert Triggered node creates one deterministic template and webhook destinat
 
 - [OpenObserve API documentation](https://openobserve.ai/docs/reference/api/)
 - [OpenObserve alert documentation](https://openobserve.ai/docs/user-guide/alerts/)
-- [n8n community node installation](https://docs.n8n.io/integrations/community-nodes/installation/)
+- [n8n manual community-node installation](https://docs.n8n.io/integrations/community-nodes/installation-and-management/gui-installation/)
 - [API and edition matrix](docs/api-matrix.md)
 - [v0.1 minimum-configuration UX audit](docs/ux-requirements-audit.md)
 - [Architecture and safety decisions](docs/architecture.md)
