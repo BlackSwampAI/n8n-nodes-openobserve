@@ -25,6 +25,11 @@ test('package identity and runtime boundary are frozen', () => {
 		'https://github.com/BlackSwampAI/n8n-nodes-openobserve.git',
 	);
 	assert.equal(packageJson.author.email, 'christopherjnelson@proton.me');
+	assert.equal(packageJson.author.name, 'Christopher J. Nelson');
+	assert.equal(
+		packageJson.bugs.url,
+		'https://github.com/BlackSwampAI/n8n-nodes-openobserve/issues',
+	);
 	assert.equal(packageJson.dependencies, undefined);
 	assert.equal(packageJson.peerDependencies['n8n-workflow'], '*');
 });
@@ -66,7 +71,10 @@ test('release workflows are least-privilege and run complete frozen gates', () =
 		'npm test',
 		'npm run build',
 		'npm run package:check',
+		'npm run smoke:load',
+		'npm run smoke:install',
 		'npm run release',
+		'npm run scan:published',
 	])
 		assert.match(publishWorkflow, new RegExp(command.split(' ').join('\\s+')));
 });

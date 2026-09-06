@@ -21,7 +21,6 @@ const staticState = (context: IHookFunctions | IWebhookFunctions) =>
 	context.getWorkflowStaticData('node') as TriggerState;
 
 // Trigger nodes receive events and cannot be invoked as action tools.
-// eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 export class OpenObserveTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'OpenObserve Trigger',

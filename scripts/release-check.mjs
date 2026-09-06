@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
@@ -21,6 +22,20 @@ const packageJson = JSON.parse(read('package.json'));
 const publishWorkflow = read('.github/workflows/publish.yml');
 const ciWorkflow = read('.github/workflows/ci.yml');
 const readme = read('README.md');
+const credentialSource = read('credentials/OpenObserveApi.credentials.ts');
+const scannerSource = read('scripts/scan-published.mjs');
+const iconHash = '888491dc3e61cb0b2dd069d844c92ea0098197884176e2abb9db3570d764022f';
+for (const path of [
+	'nodes/OpenObserve/openobserve.svg',
+	'nodes/OpenObserve/openobserve.dark.svg',
+	'nodes/OpenObserveTrigger/openobserve.svg',
+	'nodes/OpenObserveTrigger/openobserve.dark.svg',
+]) {
+	const actual = createHash('sha256')
+		.update(readFileSync(resolve(root, path)))
+		.digest('hex');
+	if (actual !== iconHash) fail(`official OpenObserve icon hash changed: ${path}`);
+}
 
 if (!/^(?:@[a-z0-9][a-z0-9._-]*\/)?n8n-nodes-[a-z0-9][a-z0-9._-]*$/.test(packageJson.name ?? '')) {
 	fail('package.json name must be a lowercase n8n-nodes-* package, optionally npm-scoped');
@@ -54,10 +69,32 @@ if (!packageJson.n8n?.nodes?.length)
 if (packageJson.publishConfig?.access !== 'public') fail('publishConfig.access must be public');
 if (packageJson.engines?.node !== '>=22.22.0')
 	fail('engines.node must match the current >=22.22.0 baseline');
+if (packageJson.devDependencies?.['@n8n/node-cli'] !== '0.46.4')
+	fail('@n8n/node-cli must match the reviewed 0.46.4 release baseline');
+if (packageJson.author?.name !== 'Christopher J. Nelson')
+	fail('package author must match the Black Swamp AI owner identity');
+if (packageJson.bugs?.url !== 'https://github.com/BlackSwampAI/n8n-nodes-openobserve/issues')
+	fail('package bugs URL must point to the project issue tracker');
 if (packageJson.scripts?.release !== 'n8n-node release')
 	fail('release script must use n8n-node release');
 if (packageJson.scripts?.prepublishOnly !== 'n8n-node prerelease') {
 	fail('prepublishOnly must use the n8n-node prerelease guard');
+}
+for (const script of ['package:check', 'smoke:load', 'smoke:install', 'scan:published']) {
+	if (!packageJson.scripts?.[script]) fail(`package.json must define ${script}`);
+}
+for (const path of ['scripts/prepare-npm-auth.mjs', 'scripts/verify-npm-version.mjs']) {
+	if (!existsSync(resolve(root, path))) fail(`${path} is required`);
+}
+if (!scannerSource.includes('prepareNpmAuth(process.env)')) {
+	fail('published scanner must remove a stale setup-node token placeholder before invoking npx');
+}
+if (
+	!credentialSource.includes('test: ICredentialTestRequest') ||
+	!credentialSource.includes("method: 'GET'") ||
+	!credentialSource.includes('CREDENTIAL_TEST_PATH')
+) {
+	fail('OpenObserve API credential must retain its harmless authenticated GET test');
 }
 
 if (process.env.GITHUB_REF_TYPE === 'tag') {
@@ -82,6 +119,8 @@ for (const command of [
 	'npm test',
 	'npm run build',
 	'npm run package:check',
+	'npm run smoke:load',
+	'npm run smoke:install',
 ]) {
 	if (!publishWorkflow.includes(command)) fail(`publish workflow must run ${command}`);
 }
@@ -90,6 +129,15 @@ if (!/contents:\s*read/.test(publishWorkflow) || !/contents:\s*read/.test(ciWork
 }
 if (!publishWorkflow.includes("node-version: '24'")) {
 	fail('publish workflow must use Node.js 24');
+}
+if (!publishWorkflow.includes('npm run scan:published')) {
+	fail('publish workflow must verify the published package with the official scanner');
+}
+for (const command of [
+	'node scripts/verify-npm-version.mjs',
+	'node scripts/prepare-npm-auth.mjs',
+]) {
+	if (!publishWorkflow.includes(command)) fail(`publish workflow must run ${command}`);
 }
 
 for (const heading of [

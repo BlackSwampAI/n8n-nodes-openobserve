@@ -10,7 +10,7 @@ assignees: ''
 - [ ] npm scope ownership and package identity `@blackswampai/n8n-nodes-openobserve` confirmed
 - [ ] Hosted `observe.blackswampai.com` least-privilege, non-destructive smoke passed
 - [ ] README installation, compatibility, credentials, operations, and license sections complete
-- [ ] `npm ci`, format check, lint, typecheck, full Vitest, build, release audit, and dry-run pack pass
+- [ ] `npm ci`, format check, lint, typecheck, full Vitest, build, release audit, package boundary, load smoke, and packed-install smoke pass
 - [ ] All guarded pinned OSS live suites pass and Compose is stopped without `-v`
 - [ ] Packed package installs/loads in disposable current n8n; action, trigger, and credential are discovered
 - [ ] Tarball contains only intended metadata/docs and `dist` artifacts
@@ -21,5 +21,5 @@ assignees: ''
 - [ ] npm `latest` is `0.1.0` and SLSA provenance is present
 - [ ] `@n8n/scan-community-package@0.34.0` prints an explicit successful result for the published package (do not trust its exit code alone)
 - [ ] GitHub release exists
-- [ ] npm Trusted Publisher configured for `publish.yml`
+- [ ] npm Trusted Publisher configured for `publish.yml` with direct publish allowed
 - [ ] `NPM_TOKEN` secret deleted and temporary npm token revoked

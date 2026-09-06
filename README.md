@@ -1,15 +1,24 @@
-# n8n nodes for OpenObserve
+# @blackswampai/n8n-nodes-openobserve
+
+[![npm version](https://img.shields.io/npm/v/%40blackswampai%2Fn8n-nodes-openobserve)](https://www.npmjs.com/package/@blackswampai/n8n-nodes-openobserve)
+[![CI](https://github.com/BlackSwampAI/n8n-nodes-openobserve/actions/workflows/ci.yml/badge.svg)](https://github.com/BlackSwampAI/n8n-nodes-openobserve/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/npm/l/%40blackswampai%2Fn8n-nodes-openobserve)](LICENSE.md)
 
 Independent Black Swamp AI n8n community integration for self-hosted [OpenObserve](https://openobserve.ai/) and OpenObserve Cloud.
 
-This project is not affiliated with, endorsed by, sponsored by, or maintained by OpenObserve. The OpenObserve name and logo belong to their respective owner(s) and are used only to identify compatibility.
+> This is an unofficial Black Swamp AI community integration. It is not affiliated with, endorsed by, sponsored by, or maintained by OpenObserve. The OpenObserve name and logo belong to their respective owner(s) and are used only to identify compatibility.
 
-> [!WARNING]
-> This repository contains a 0.1.0 release candidate. It has not been published or declared production-ready.
+[Installation](#installation) · [Compatibility](#compatibility) · [Credentials](#credentials) · [Operations](#operations) · [Troubleshooting](#troubleshooting) · [Resources](#resources)
 
 ## Installation
 
-There is no installable npm release yet. After the repository is public and the release checklist is approved, install `@blackswampai/n8n-nodes-openobserve` in n8n under **Settings → Community Nodes**. Releases are published only by the tag-triggered GitHub Actions workflow with npm provenance; local publication is unsupported.
+Install this package in a self-hosted n8n instance:
+
+1. Open **Settings → Community Nodes**.
+2. Select **Install** and enter `@blackswampai/n8n-nodes-openobserve`.
+3. Review n8n's community-node warning and confirm the installation.
+
+Releases are published only by the tag-triggered GitHub Actions workflow with provenance; local publication is unsupported. Verify the **Provenance** record on the npm package page or run `npm view @blackswampai/n8n-nodes-openobserve dist.attestations`.
 
 ## Compatibility
 
@@ -58,6 +67,13 @@ Resource locators select existing streams, dashboards, alerts, and pipelines and
 
 The Alert Triggered node creates one deterministic template and webhook destination and adds only that destination to explicitly selected alerts. It stores a separate random secret in n8n node static data and validates inbound delivery in constant time. Deactivation removes only its exact attachment and owned artifacts; ambiguous ownership fails closed. OpenObserve retries can produce duplicate executions because payloads have no universal stable event ID. Workflows needing exactly-once effects should deduplicate or make side effects idempotent; alert identity plus trigger time can assist.
 
+## Troubleshooting
+
+- If the credential test fails, confirm that the Base URL contains no `/api/{org}` suffix and that the Organization ID matches the credential's account.
+- If a dynamic selector is empty, confirm the credential can list that resource in the selected folder or stream type; manual locator modes remain available for expressions.
+- Use HTTPS outside local development. Never paste credentials, destination headers, trigger secrets, or complete error payloads into an issue.
+- For self-hosted and local-container details, see [docs/testing.md](docs/testing.md). Report reproducible package issues through the [project issue tracker](https://github.com/BlackSwampAI/n8n-nodes-openobserve/issues).
+
 ## Resources
 
 - [OpenObserve API documentation](https://openobserve.ai/docs/reference/api/)
@@ -67,6 +83,9 @@ The Alert Triggered node creates one deterministic template and webhook destinat
 - [v0.1 minimum-configuration UX audit](docs/ux-requirements-audit.md)
 - [Architecture and safety decisions](docs/architecture.md)
 - [Validation record and local test procedure](docs/testing.md)
+- [Release process](RELEASING.md)
+
+The packaged light and dark icons use the unmodified official OpenObserve product glyph from [`openobserve/openobserve` commit `c651f43f29c864478f5107612622a5e20492ea39`](https://github.com/openobserve/openobserve/blob/c651f43f29c864478f5107612622a5e20492ea39/web/src/assets/images/common/o2_logo.svg). Use of that mark does not imply affiliation, sponsorship, endorsement, or maintenance. See [logo provenance](docs/logo.md).
 
 ## Development
 
@@ -83,9 +102,9 @@ docker compose config
 
 The local OpenObserve harness and smoke procedure are documented in [docs/testing.md](docs/testing.md). Architecture decisions and trigger safety rules are in [docs/architecture.md](docs/architecture.md).
 
-## Release status
+## Release provenance
 
-Version 0.1.0 is a release candidate only; no package, tag, or GitHub release exists. n8n verification and provenance-backed publication require a public repository, so repository visibility must be confirmed before release. See [RELEASING.md](RELEASING.md) for the authorized first-publication bootstrap and immediate Trusted Publisher transition.
+Published versions originate from immutable version tags through the repository's least-privilege GitHub Actions workflow. npm provenance links each package to its public source commit. Maintainers should follow [RELEASING.md](RELEASING.md) for release authorization and verification.
 
 ## License
 

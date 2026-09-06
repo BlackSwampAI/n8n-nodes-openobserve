@@ -17,6 +17,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['22.22.0', '24']
 
     steps:
       - uses: actions/checkout@v6
@@ -24,7 +27,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 'lts/*'
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -47,3 +50,9 @@ jobs:
 
       - name: Validate package and release configuration
         run: npm run package:check
+
+      - name: Load compiled nodes and credential
+        run: npm run smoke:load
+
+      - name: Install and load packed package
+        run: npm run smoke:install
